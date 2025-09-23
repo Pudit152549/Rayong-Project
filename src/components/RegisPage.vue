@@ -1,11 +1,13 @@
 <template>
-    <div class="bg-white p-6 rounded-lg shadow-md w-160">
+    <div class="bg-gray-100 p-6 rounded-lg w-180">
+    <!-- แสดงชื่อผู้ใช้จาก store หากมี ไม่เช่นนั้นแสดง "Login" -->
+    <n-card size="huge" hoverable>
     <div class="text-center">
       <h2 class="gradient-text text-2xl font-bold mb-2">Register</h2>
       <n-divider />
   
       <div class="mb-4">
-        <label class="bg-green-100 block text-gray-700 text-left rounded mt-3">Firstname:</label>
+        <label class="block text-gray-700 text-left rounded mt-3">Firstname:</label>
         <input 
           type="text" 
           v-model="firstname" 
@@ -16,7 +18,7 @@
       </div>
   
       <div class="mb-4">
-        <label class="bg-green-100 block text-gray-700 text-left rounded mt-3">Lastname:</label>
+        <label class="block text-gray-700 text-left rounded mt-3">Lastname:</label>
         <input 
           type="text" 
           v-model="lastname" 
@@ -27,7 +29,7 @@
       </div>
   
       <div class="mb-4">
-        <label class="bg-green-100 block text-gray-700 text-left rounded mt-3">Email:</label>
+        <label class="block text-gray-700 text-left rounded mt-3">Email:</label>
         <input 
           type="email" 
           v-model="email" 
@@ -38,7 +40,7 @@
       </div>
   
       <div class="mb-4">
-        <label class="bg-green-100 block text-gray-700 text-left rounded mt-3">Password:</label>
+        <label class="block text-gray-700 text-left rounded mt-3">Password:</label>
         <input 
           type="password" 
           v-model="password" 
@@ -49,7 +51,7 @@
       </div>
   
       <div class="mb-4">
-        <label class="bg-green-100 block text-gray-700 text-left rounded mt-3">Confirm Password:</label>
+        <label class="block text-gray-700 text-left rounded mt-3">Confirm Password:</label>
         <input 
           type="password" 
           v-model="confirmPassword" 
@@ -68,26 +70,29 @@
   
       <p v-if="!isPasswordMatch" class="text-red-500 mt-2">รหัสผ่านไม่ตรงกัน</p>
       <p v-if="errorMessage" class="text-red-500 mt-2">{{ errorMessage }}</p>
-  
       <router-link to="/" class="text-blue-500 mt-4 block">
-        <button class="text-blue-500 px-4 py-2 rounded">
+      <n-divider />
+        <button class="text-blue-500 px-4 py-1 rounded">
           Already have an account? Login
         </button>
       </router-link>
     </div>
+    </n-card>
 </div>
   </template>
   
   <script>
 import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
-import { NButton,NDivider } from "naive-ui"
+import { NButton, NDivider, NInput, NCard } from "naive-ui"
 
 export default {
   name: "RegisPage",
   components:{
     NButton,
-    NDivider
+    NDivider,
+    NInput,
+    NCard
   },
 
   setup() {

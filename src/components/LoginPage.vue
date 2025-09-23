@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white p-6 rounded-lg shadow-md w-160">
+  <div class="bg-gray-100 p-6 rounded-lg w-180">
     <!-- แสดงชื่อผู้ใช้จาก store หากมี ไม่เช่นนั้นแสดง "Login" -->
     <n-card size="huge" hoverable>
     <h2 class="gradient-text text-2xl font-bold mb-2">
@@ -45,7 +45,7 @@
     <!-- Register link อยู่ด้านขวาสุด -->
     <div class="text-right mt-4">
       <router-link to="/register"
-        class="px-4 py-2 rounded hover:bg-red-200 mt-10">
+        class="px-4 py-2 rounded hover:text-white hover:bg-indigo-700 mt-10">
         Register
       </router-link>
     </div>
