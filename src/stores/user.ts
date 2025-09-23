@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { useDialog } from 'naive-ui'
 
 export const useUserStore = defineStore('user', {
   state: () => ({
