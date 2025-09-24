@@ -1,161 +1,161 @@
 <template>
-    <div class="bg-gray-100 p-6 rounded-lg w-180">
-    <!-- แสดงชื่อผู้ใช้จาก store หากมี ไม่เช่นนั้นแสดง "Login" -->
+  <div class="bg-gray-100 p-6 rounded-lg w-180">
     <n-card size="huge" hoverable>
-    <div class="text-center">
-      <h2 class="gradient-text text-2xl font-bold mb-2">Register</h2>
-      <n-divider />
-  
-      <div class="mb-4">
-        <label class="block text-gray-700 text-left rounded mt-3">Firstname:</label>
-        <input 
-          type="text" 
-          v-model="firstname" 
-          class="w-full p-2 border border-gray-300 rounded mt-1" 
-          placeholder="Firstname"
-          required 
-        />
+      <div>
+        <h2 class="gradient-text text-2xl font-bold mb-2">Register</h2>
+        <n-divider />
+
+        <n-form
+          ref="formRef"
+          :model="form"
+          :rules="rules"
+          @submit.prevent="handleRegister"
+        >
+          <n-form-item path="firstname" label="Firstname:" class="mb-2">
+            <n-input
+              v-model:value="form.firstname"
+              placeholder="Firstname"
+              class="w-full mt-1"
+            />
+          </n-form-item>
+
+          <n-form-item path="lastname" label="Lastname:" class="mb-2">
+            <n-input
+              v-model:value="form.lastname"
+              placeholder="Lastname"
+              class="w-full mt-1"
+            />
+          </n-form-item>
+
+          <n-form-item path="email" label="Email:" class="mb-2">
+            <n-input
+              v-model:value="form.email"
+              type="text"
+              placeholder="Email"
+              class="w-full mt-1"
+            />
+          </n-form-item>
+
+          <n-form-item path="password" label="Password:" class="mb-2">
+            <n-input
+              v-model:value="form.password"
+              type="password"
+              show-password-on="click"
+              placeholder="Password"
+              class="w-full mt-1"
+            />
+          </n-form-item>
+
+          <n-form-item path="confirmPassword" label="Confirm Password:" class="mb-2">
+            <n-input
+              v-model:value="form.confirmPassword"
+              type="password"
+              show-password-on="click"
+              placeholder="Confirm Password"
+              class="w-full mt-1"
+            />
+          </n-form-item>
+
+          <n-button type="primary" attr-type="submit" class="mt-2">
+            Register
+          </n-button>
+
+          <n-divider />
+
+          <router-link to="/" class="text-blue-500 mt-4 block">
+            <n-button strong secondary round type="info">
+              Already have an account? Login
+            </n-button>
+          </router-link>
+        </n-form>
       </div>
-  
-      <div class="mb-4">
-        <label class="block text-gray-700 text-left rounded mt-3">Lastname:</label>
-        <input 
-          type="text" 
-          v-model="lastname" 
-          class="w-full p-2 border border-gray-300 rounded mt-1" 
-          placeholder="Lastname"
-          required 
-        />
-      </div>
-  
-      <div class="mb-4">
-        <label class="block text-gray-700 text-left rounded mt-3">Email:</label>
-        <input 
-          type="email" 
-          v-model="email" 
-          class="w-full p-2 border border-gray-300 rounded mt-1" 
-          placeholder="Email"
-          required 
-        />
-      </div>
-  
-      <div class="mb-4">
-        <label class="block text-gray-700 text-left rounded mt-3">Password:</label>
-        <input 
-          type="password" 
-          v-model="password" 
-          class="w-full p-2 border border-gray-300 rounded mt-1" 
-          placeholder="Password"
-          required 
-        />
-      </div>
-  
-      <div class="mb-4">
-        <label class="block text-gray-700 text-left rounded mt-3">Confirm Password:</label>
-        <input 
-          type="password" 
-          v-model="confirmPassword" 
-          class="w-full p-2 border border-gray-300 rounded mt-1" 
-          required 
-        />
-      </div>
-  
-      <button 
-        type="button" 
-        @click="handleRegister"
-        :disabled="!isPasswordMatch"
-        class="bg-red-500 text-green-700 px-4 py-2 rounded hover:bg-red-600">
-        Register
-      </button>
-  
-      <p v-if="!isPasswordMatch" class="text-red-500 mt-2">รหัสผ่านไม่ตรงกัน</p>
-      <p v-if="errorMessage" class="text-red-500 mt-2">{{ errorMessage }}</p>
-      <router-link to="/" class="text-blue-500 mt-4 block">
-      <n-divider />
-        <button class="text-blue-500 px-4 py-1 rounded">
-          Already have an account? Login
-        </button>
-      </router-link>
-    </div>
     </n-card>
-</div>
-  </template>
-  
-  <script>
-import { ref, computed } from "vue";
+  </div>
+</template>
+
+<script setup lang="ts">
+import { reactive, ref, computed } from "vue";
 import { useRouter } from "vue-router";
-import { NButton, NDivider, NInput, NCard } from "naive-ui"
+import { NButton, NDivider, NInput, NCard, NForm, NFormItem, useNotification } from "naive-ui";
+import type { FormInst, FormRules, NotificationType } from "naive-ui";
 
-export default {
-  name: "RegisPage",
-  components:{
-    NButton,
-    NDivider,
-    NInput,
-    NCard
-  },
+// ตั้งชื่อคอมโพเนนต์ (ทางเลือก)
+defineOptions({ name: "RegisPage" });
 
-  setup() {
-    const firstname = ref("");
-    const lastname = ref("");
-    const email = ref("");
-    const password = ref("");
-    const confirmPassword = ref("");
-    const errorMessage = ref("");
+interface RegisterForm {
+  firstname: string;
+  lastname: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
 
-    const router = useRouter();
+const router = useRouter();
+const notification = useNotification()
+function notify(
+  type: NotificationType,
+  message: string,
+  meta?: string
+) {
+  notification[type]({
+    content: message,
+    meta: meta,
+    duration: 3500,
+    keepAliveOnHover: true
+  })
+}
 
-    const isPasswordMatch = computed(() => password.value === confirmPassword.value);
+const form = reactive<RegisterForm>({
+  firstname: "",
+  lastname: "",
+  email: "",
+  password: "",
+  confirmPassword: ""
+});
 
-    const handleRegister = () => {
-      // ตรวจสอบว่ากรอกข้อมูลครบทุกช่องหรือไม่
-      if (!firstname.value || !lastname.value || !email.value || !password.value || !confirmPassword.value) {
-        errorMessage.value = "Please fill in the information.";
-        return;
-      }
-      // ถ้าทุกช่องกรอกครบแล้วแต่รหัสผ่านไม่ตรงกัน
-      if (!isPasswordMatch.value) {
-        errorMessage.value = "";
-        // (ข้อความรหัสผ่านไม่ตรงกันจะแสดงอยู่ใน p tag แล้ว)
-        return;
-      }
-      
-      // ถ้าทุกอย่างถูกต้อง ให้เคลียร์ errorMessage และไปหน้า Login
-      errorMessage.value = "";
-      alert("Register Successful");
-      router.push("/");
-    };
+const isPasswordMatch = computed(() => form.password === form.confirmPassword);
 
-    return {
-      firstname,
-      lastname,
-      email,
-      password,
-      confirmPassword,
-      isPasswordMatch,
-      errorMessage,
-      handleRegister
-    };
-  },
+const formRef = ref<FormInst | null>(null);
+
+const rules: FormRules = {
+  firstname: [{ required: true, message: "Please enter firstname", trigger: ["input", "blur"] }],
+  lastname: [{ required: true, message: "Please enter lastname", trigger: ["input", "blur"] }],
+  email: [{ required: true, message: "Please enter email", trigger: ["input", "blur"] }],
+  password: [{ required: true, message: "Please enter password", trigger: ["input", "blur"] }],
+  confirmPassword: [{ required: true, message: "Please confirm password", trigger: ["input", "blur"] }]
+};
+
+const handleRegister = async () => {
+  try {
+    await formRef.value?.validate();
+  } catch {
+    // validate ไม่ผ่าน -> Naive UI จะโชว์ error message ใต้ช่องให้แล้ว
+    return;
+  }
+
+  if (!isPasswordMatch.value) {
+    notify("error", "รหัสผ่านไม่ตรงกัน");
+    return;
+  }
+
+  alert("Register Successful");
+  router.push("/");
 };
 </script>
-  
-  <style scoped>
-  form div {
-    margin-bottom: 10px;
-  }
-  
-  label {
-    margin-bottom: 8px;
-  }
-  
-  button {
-    margin-top: 10px;
-  }
-  .gradient-text {
+
+<style scoped>
+form div { margin-bottom: 10px; }
+label { margin-bottom: 8px; }
+button { margin-top: 10px; }
+
+.gradient-text {
   background: linear-gradient(90deg, #00ffff, #cc00ff);
-  background-clip: text; /* แบบมาตรฐาน */
-  -webkit-background-clip: text; /* สำหรับเว็บเบราว์เซอร์ที่ใช้ prefix */
+  background-clip: text;
+  -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
-  </style>
+
+/* ให้ข้อความและ placeholder ใน n-input ชิดซ้าย */
+:deep(.n-input__input-el),
+:deep(.n-input__placeholder) { text-align: left; }
+</style>
