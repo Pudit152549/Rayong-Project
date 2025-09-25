@@ -76,10 +76,9 @@
 <script setup lang="ts">
 import { reactive, ref, computed } from "vue";
 import { useRouter } from "vue-router";
-import { NButton, NDivider, NInput, NCard, NForm, NFormItem, useNotification } from "naive-ui";
+import { NButton, NDivider, NInput, NCard, NForm, NFormItem, useNotification, useDialog } from "naive-ui";
 import type { FormInst, FormRules, NotificationType } from "naive-ui";
 
-// ตั้งชื่อคอมโพเนนต์ (ทางเลือก)
 defineOptions({ name: "RegisPage" });
 
 interface RegisterForm {
@@ -91,18 +90,16 @@ interface RegisterForm {
 }
 
 const router = useRouter();
-const notification = useNotification()
-function notify(
-  type: NotificationType,
-  message: string,
-  meta?: string
-) {
+const dialog = useDialog();
+const notification = useNotification();
+
+function notify(type: NotificationType, message: string, meta?: string) {
   notification[type]({
     content: message,
     meta: meta,
     duration: 3500,
     keepAliveOnHover: true
-  })
+  });
 }
 
 const form = reactive<RegisterForm>({
@@ -114,7 +111,6 @@ const form = reactive<RegisterForm>({
 });
 
 const isPasswordMatch = computed(() => form.password === form.confirmPassword);
-
 const formRef = ref<FormInst | null>(null);
 
 const rules: FormRules = {
@@ -129,7 +125,6 @@ const handleRegister = async () => {
   try {
     await formRef.value?.validate();
   } catch {
-    // validate ไม่ผ่าน -> Naive UI จะโชว์ error message ใต้ช่องให้แล้ว
     return;
   }
 
@@ -138,8 +133,14 @@ const handleRegister = async () => {
     return;
   }
 
-  alert("Register Successful");
-  router.push("/");
+  dialog.success({
+    title: "Register Successful",
+    content: "ลงทะเบียนสำเร็จ",
+    positiveText: "ตกลง",
+    onPositiveClick: () => {
+      router.push("/");
+    }
+  });
 };
 </script>
 

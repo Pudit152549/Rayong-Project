@@ -48,13 +48,6 @@
         </router-link>
       </div>
     </n-card>
-
-    <p
-      v-if="userStore.isLoggedIn"
-      class="text-green-700 font-bold text-sm mt-2 text-center"
-    >
-      Login Successful
-    </p>
   </div>
 </template>
 
@@ -68,7 +61,8 @@ import {
   NInput,
   NCard,
   NForm,
-  NFormItem
+  NFormItem,
+  useDialog
 } from "naive-ui";
 
 export default {
@@ -84,6 +78,7 @@ export default {
   setup() {
     const router = useRouter();
     const userStore = useUserStore();
+    const dialog = useDialog();
 
     const form = reactive({
       email: "",
@@ -104,9 +99,22 @@ export default {
     const handleLogin = async () => {
       await formRef.value?.validate();
       userStore.login(form.email, form.password);
+
       if (userStore.isLoggedIn) {
-        alert("User has login");
-        router.push({ name: "Home" });
+        dialog.success({
+          title: "Login Successful",
+          content: `เข้าสู่ระบบสำเร็จ`,
+          positiveText: "ตกลง",
+          onPositiveClick: () => {
+            router.push({ name: "Home" });
+          }
+        });
+      } else {
+        dialog.error({
+          title: "Login Failed",
+          content: "อีเมลหรือรหัสผ่านไม่ถูกต้อง",
+          positiveText: "ยืนยัน"
+        });
       }
     };
 
@@ -120,6 +128,7 @@ export default {
   }
 };
 </script>
+
 
 <style scoped>
 /* space เดิม */
