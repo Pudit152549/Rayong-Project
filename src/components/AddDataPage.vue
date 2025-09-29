@@ -208,7 +208,7 @@ import { ref } from "vue";
 import { useDialog, useMessage, useNotification } from "naive-ui";
 
 export default {
-  name: "DataPage",
+  name: "AddDataPage",
   components: {
     NButton,
     NDivider,

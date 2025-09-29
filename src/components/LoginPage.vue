@@ -1,9 +1,17 @@
 <template>
   <div class="bg-gray-100 p-6 rounded-lg w-180">
+    <!-- Logo -->
+    <div class="flex justify-center mb-4">
+      <img :src="logoUrl" alt="Stream Logo" class="h-20" />
+    </div>
+    <h3 class="text-1xl my-2 text-center">
+      การออกแบบและพัฒนาระบบติดตามความคืบหน้างาน (Scrum Board)
+    </h3>
+
     <n-card size="huge" hoverable>
-      <h2 class="gradient-text text-2xl font-bold mb-2">
-        Welcome to Scrum Board
-      </h2>
+      <h3 class="text-red-500 text-2xl font-bold mb-2">
+        Login
+      </h3>
       <n-divider />
 
       <n-form
@@ -55,6 +63,7 @@
 import { reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useUserStore } from "../stores/user";
+import logoUrl from "../assets/Stream.png";
 import {
   NButton,
   NDivider,
@@ -123,7 +132,8 @@ export default {
       rules,
       formRef,
       handleLogin,
-      userStore
+      userStore,
+      logoUrl
     };
   }
 };
