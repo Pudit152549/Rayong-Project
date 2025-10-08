@@ -8,7 +8,7 @@
 
     <n-card size="huge" hoverable class="w-full max-w-screen-xl mx-auto">
       <n-space justify="end">
-        <n-button type="info">เพิ่มข้อมูล</n-button>
+        <n-button type="info" @click="addData">เพิ่มข้อมูล</n-button>
       </n-space>
       <n-divider />
         <div class="grid lg:flex gap-2 w-full mb-4">
@@ -27,18 +27,21 @@
 						placeholder="กรุณาเลือก"
 					/>
 				</n-form-item>
-				<n-form-item label="สถานะความคืบหน้า" class="w-full" n-form-item :show-feedback="false">
-					<n-select
-						class="my-2 md:my-0"
-						placeholder="กรุณาเลือก"
-					/>
-				</n-form-item>
+        <n-form-item label="สถานะความคืบหน้า" class="w-full" :show-feedback="false">
+          <n-select
+            v-model:value="statusFilter"
+            :options="statusOptions"
+            clearable
+            class="my-2 md:my-0"
+            placeholder="กรุณาเลือก"
+          />
+        </n-form-item>
 			</div>
 
 			<div class="flex gap-2 justify-center w-full mb-4">
-				<NButton size="large" class="flex items-center" type="error" ghost>
-					ล้างการค้นหา
-				</NButton>
+        <NButton size="large" class="flex items-center" type="error" ghost @click="clearFilters">
+          ล้างการค้นหา
+        </NButton>
 				<NButton type="primary" size="large" class="flex items-center">
 					<!-- <template #icon>
 						<Icon icon="bx-search" class="text-2xl" />
@@ -50,7 +53,7 @@
 
       <n-data-table
         :columns="columns"
-        :data="rows"
+        :data="filteredRows"
         :row-key="rowKey"
         v-model:checked-row-keys="checkedRowKeys"
         size="small"
@@ -68,14 +71,17 @@
 </template>
 
 <script setup lang="ts">
-import { h, reactive, ref, onMounted, onBeforeUnmount } from "vue";
+import { h, reactive, ref, onMounted, onBeforeUnmount, computed } from "vue";
 import { useRouter } from "vue-router";
 import { useUserStore } from "../stores/user";
 import {
   NButton, NDivider, NDataTable, NTag, NSpace, NIcon, NCard, NDatePicker, NInput, NFormItem, NSelect,
   type DataTableColumns
 } from "naive-ui";
-import { EyeOutline, CreateOutline, TrashOutline, } from "@vicons/ionicons5";
+import { EyeOutline, CreateOutline, TrashOutline } from "@vicons/ionicons5";
+
+/** ✅ ใช้ status 3 ระดับแทน boolean */
+type Status = "todo" | "in_progress" | "done";
 
 interface RowData {
   id: number;
@@ -83,13 +89,13 @@ interface RowData {
   assigned_agency: string;
   responsible_person_name: string;
   period: [number, number] | null;
-  is_active: boolean;
+  status: Status;
 }
 
 const router = useRouter();
 const userStore = useUserStore();
 
-// ✅ Mock data
+/** ✅ Mock data ตัวอย่าง */
 const rows = reactive<RowData[]>([
   {
     id: 1,
@@ -97,7 +103,7 @@ const rows = reactive<RowData[]>([
     assigned_agency: "สำนักงานการศึกษาขั้นพื้นฐาน",
     responsible_person_name: "สมชาย ใจดี",
     period: [1758906000000, 1759165200000],
-    is_active: true
+    status: "in_progress"
   },
   {
     id: 2,
@@ -105,22 +111,39 @@ const rows = reactive<RowData[]>([
     assigned_agency: "สำนักงานพัฒนาธุรกรรมทางอิเล็กทรอนิกส์",
     responsible_person_name: "สมปอง มีสุข",
     period: [1759200000000, 1759459200000],
-    is_active: false
+    status: "todo"
   }
 ]);
+
+/** ✅ ฟิลเตอร์สถานะ + ออปชัน */
+const statusFilter = ref<string | null>(null); // null = ทั้งหมด
+const statusOptions = [
+  { label: "To Do", value: "todo" },
+  { label: "In Progress", value: "in_progress" },
+  { label: "Done", value: "done" }
+];
+
+const filteredRows = computed(() => {
+  if (!statusFilter.value) return rows;
+  return rows.filter(r => r.status === statusFilter.value);
+});
+
+const clearFilters = () => {
+  statusFilter.value = null;
+  // ถ้ามีฟิลเตอร์อื่น ๆ ค่อยเคลียร์เพิ่มตรงนี้
+};
 
 const checkedRowKeys = ref<number[]>([]);
 const rowKey = (row: RowData) => row.id;
 
-// ✅ auto pageSize ให้พอดีจอ
+/** ✅ auto pageSize ให้พอดีจอ */
 const pageSize = ref(8);
 function recomputePageSize() {
-  const headerHeight = 300; // px ใช้เวลากะคร่าว ๆ
-  const rowHeight = 44;     // ความสูงของแถว size="small"
+  const headerHeight = 300;
+  const rowHeight = 44;
   const usable = window.innerHeight - headerHeight;
   pageSize.value = Math.max(3, Math.floor(usable / rowHeight));
 }
-
 onMounted(() => {
   recomputePageSize();
   window.addEventListener("resize", recomputePageSize);
@@ -138,10 +161,23 @@ const pagination = reactive({
 const renderIndex = (_: RowData, index: number) =>
   h("span", {}, (pagination.page - 1) * pagination.pageSize + (index + 1));
 
+/** ✅ เรนเดอร์สถานะ 3 ระดับ */
+const statusLabelMap: Record<Status, string> = {
+  todo: "To Do",
+  in_progress: "In Progress",
+  done: "Done"
+};
+const statusTypeMap: Record<Status, "error" | "warning" | "success"> = {
+  todo: "error",
+  in_progress: "warning",
+  done: "success"
+};
 const renderStatus = (row: RowData) =>
-  row.is_active
-    ? h(NTag, { type: "success", round: true, bordered: false }, { default: () => "Done" })
-    : h(NTag, { type: "error", round: true, bordered: false }, { default: () => "To Do" });
+  h(
+    NTag,
+    { type: statusTypeMap[row.status], round: true, bordered: false },
+    { default: () => statusLabelMap[row.status] }
+  );
 
 const renderDateRange = (row: RowData) =>
   h(NDatePicker, {
@@ -156,65 +192,41 @@ const renderIcon = (IconComp: any) => h(NIcon, null, { default: () => h(IconComp
 
 const renderActions = (row: RowData) =>
   h("div", { class: "flex items-center justify-center gap-2" }, [
-    h(NButton, { circle: true, tertiary: true, type: "info", size: "small", onClick: () => console.log("view", row) }, { icon: () => renderIcon(EyeOutline) }),
-    h(NButton, { circle: true, tertiary: true, type: "warning", size: "small", onClick: () => console.log("edit", row) }, { icon: () => renderIcon(CreateOutline) }),
-    h(NButton, { circle: true, tertiary: true, type: "error", size: "small", onClick: () => console.log("delete", row) }, { icon: () => renderIcon(TrashOutline) })
+    h(
+      NButton,
+      { circle: true, tertiary: true, type: "info", size: "small", onClick: () => console.log("view", row) },
+      { icon: () => renderIcon(EyeOutline) }
+    ),
+    h(
+      NButton,
+      { circle: true, tertiary: true, type: "warning", size: "small", onClick: () => console.log("edit", row) },
+      { icon: () => renderIcon(CreateOutline) }
+    ),
+    h(
+      NButton,
+      { circle: true, tertiary: true, type: "error", size: "small", onClick: () => console.log("delete", row) },
+      { icon: () => renderIcon(TrashOutline) }
+    )
   ]);
 
 const columns: DataTableColumns<RowData> = [
-  { 
-    title: "ลำดับ", 
-    key: "index", 
-    align: "center", 
-    width: 100,              // ✅ ขยายจาก 80 → 100
-    render: renderIndex 
-  },
-  { 
-    title: "ชื่อแผนงานที่รับผิดชอบ", 
-    key: "strategy", 
-    minWidth: 220,           // ✅ ขยายจาก 220 → 280
-    render: (r) => r.project_name?.name 
-  },
-  { 
-    title: "หน่วยงานที่มอบหมาย", 
-    key: "agency", 
-    minWidth: 240,           // เดิม 220 → 240
-    render: (r) => r.assigned_agency 
-  },
-  { 
-    title: "ผู้รับผิดชอบ", 
-    key: "owner", 
-    minWidth: 160,           // ✅ ขยายจาก 140 → 200
-    render: (r) => r.responsible_person_name 
-  },
-  { 
-    title: "ระยะเวลาที่ได้รับ", 
-    key: "period", 
-    width: 280, 
-    align: "center", 
-    render: renderDateRange 
-  },
-  { 
-    title: "สถานะความคืบหน้า", 
-    key: "is_active", 
-    width: 150, 
-    align: "center", 
-    render: renderStatus 
-  },
-  { 
-    title: "การจัดการ", 
-    key: "action", 
-    width: 200, 
-    align: "center", 
-    render: renderActions 
-  }
+  { title: "ลำดับ", key: "index", align: "center", width: 100, render: renderIndex },
+  { title: "ชื่อแผนงานที่รับผิดชอบ", key: "strategy", minWidth: 220, render: (r) => r.project_name?.name },
+  { title: "หน่วยงานที่มอบหมาย", key: "agency", minWidth: 240, render: (r) => r.assigned_agency },
+  { title: "ผู้รับผิดชอบ", key: "owner", minWidth: 160, render: (r) => r.responsible_person_name },
+  { title: "ระยะเวลาที่ได้รับ", key: "period", width: 280, align: "center", render: renderDateRange },
+  { title: "สถานะความคืบหน้า", key: "status", width: 160, align: "center", render: renderStatus }, // ✅ เปลี่ยน key
+  { title: "การจัดการ", key: "action", width: 200, align: "center", render: renderActions }
 ];
-
 
 const handleLogout = () => {
   userStore.logout();
   router.push("/");
 };
+const addData = () => {
+  router.push({ name: "AddData" });
+};
+
 </script>
 
 
