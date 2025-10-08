@@ -1,64 +1,61 @@
 <template>
-  <!-- ชั้นนอกสุด: เต็มจอและอยู่กึ่งกลาง -->
-  <div class="min-h-screen w-full bg-white-100 flex justify-center items-start py-10">
-    <!-- กล่องหน้า login: กว้างพอดีจอเดสก์ท็อป/มือถือ -->
-    <div class="w-full max-w-xl px-4">
-      <!-- Logo -->
-      <div class="flex justify-center mb-4">
-        <img :src="logoUrl" alt="Stream Logo" class="h-20" />
-      </div>
-
-      <h3 class="text-sm md:text-base my-2 text-center text-gray-700">
-        การออกแบบและพัฒนาระบบติดตามความคืบหน้างาน (Scrum Board)
-      </h3>
-
-      <n-card size="huge" hoverable class="shadow">
-        <h3 class="text-red-500 text-2xl font-bold mb-2 text-center">
-          Login
-        </h3>
-        <n-divider />
-
-        <n-form
-          ref="formRef"
-          :model="form"
-          :rules="rules"
-          @submit.prevent="handleLogin"
-        >
-          <n-form-item path="email" label="Email :" class="mb-4">
-            <n-input
-              v-model:value="form.email"
-              placeholder="E-mail"
-              class="w-full mt-1"
-              type="text"
-            />
-          </n-form-item>
-
-          <n-form-item path="password" label="Password :" class="mb-4">
-            <n-input
-              v-model:value="form.password"
-              placeholder="Password"
-              class="w-full mt-1"
-              type="password"
-              show-password-on="click"
-            />
-          </n-form-item>
-          <n-space justify="center">
-            <n-button type="info" attr-type="submit" class="w-full">
-              Login
-            </n-button>
-          </n-space>
-        </n-form>
-
-        <div class="text-right mt-4">
-          <router-link
-            to="/register"
-            class="text-blue-600 hover:underline text-sm"
-          >
-            Register
-          </router-link>
-        </div>
-      </n-card>
+  <div class="bg-gray-100 p-6 rounded-lg w-180">
+    <!-- Logo -->
+    <div class="flex justify-center mb-4">
+      <img :src="logoUrl" alt="Stream Logo" class="h-20" />
     </div>
+    <h3 class="text-1xl my-2 text-center">
+      การออกแบบและพัฒนาระบบติดตามความคืบหน้างาน (Scrum Board)
+    </h3>
+
+    <n-card size="huge" hoverable>
+      <h3 class="text-red-500 text-2xl font-bold mb-2">
+        Login
+      </h3>
+      <n-divider />
+
+      <n-form
+        ref="formRef"
+        :model="form"
+        :rules="rules"
+        @submit.prevent="handleLogin"
+      >
+        <n-form-item path="email" label="Email :" class="mb-4">
+          <n-input
+            v-model:value="form.email"
+            placeholder="E-mail"
+            class="w-full mt-1 custom-input"
+            type="text"
+          />
+        </n-form-item>
+
+        <n-form-item path="password" label="Password :" class="mb-4">
+          <n-input
+            v-model:value="form.password"
+            placeholder="Password"
+            class="w-full mt-1 custom-input"
+            type="password"
+            show-password-on="click"
+          />
+        </n-form-item>
+
+        <div>
+          <n-button type="info" attr-type="submit">
+            Login
+          </n-button>
+          <n-divider />
+        </div>
+      </n-form>
+
+      <div class="text-right mt-4">
+        <router-link
+          to="/register"
+          class="px-4 py-2 rounded hover:text-white hover:bg-indigo-700 mt-10"
+        >
+          Register
+        </router-link>
+      </div>
+    </n-card>
   </div>
 </template>
 
@@ -74,8 +71,7 @@ import {
   NCard,
   NForm,
   NFormItem,
-  useDialog,
-  NSpace
+  useDialog
 } from "naive-ui";
 
 export default {
@@ -86,8 +82,7 @@ export default {
     NInput,
     NCard,
     NForm,
-    NFormItem,
-    NSpace
+    NFormItem
   },
   setup() {
     const router = useRouter();
