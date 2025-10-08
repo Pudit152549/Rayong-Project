@@ -1,17 +1,17 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import LoginPage from '../components/LoginPage.vue'
-import HomePage from '../components/HomePage.vue'
 import RegisPage from '../components/RegisPage.vue'
-import ProfilePage from '../components/ProfilePage.vue'
-import AddDataPage from '../components/AddDataPage.vue'
-import EditPage from '../components/EditPage.vue'
+import HomePage from '../views/HomePage.vue'
+import ProfilePage from '../views/ProfilePage.vue'
+import AddDataPage from '../views/AddDataPage.vue'
+import EditPage from '../views/EditPage.vue'
 
 const routes = [
   { path: '/', name: 'Login', component: LoginPage },
   { path: '/home', name: 'Home', component: HomePage },
   { path: '/register', name: 'Register', component:RegisPage},
   { path: '/profile', name: 'Profile', component:ProfilePage},
-  { path: '/data', name: 'Data', component:AddDataPage},
+  { path: '/add', name: 'AddData', component:AddDataPage},
   { path: '/edit', name: 'Edit', component:EditPage}
 ]
 

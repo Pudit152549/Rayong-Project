@@ -60,7 +60,9 @@
     </n-card>
 
     <div class="mt-4">
-      <n-button type="error" @click="handleLogout">Logout</n-button>
+      <n-space justify="center">
+        <n-button type="error" @click="handleLogout">Logout</n-button>
+      </n-space>
     </div>
   </div>
 </template>
@@ -222,5 +224,12 @@ const handleLogout = () => {
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+:deep(.n-input__input-el) {
+  text-align: left;       /* ชิดซ้าย */
+}
+
+:deep(.n-input__placeholder) {
+  text-align: left;       /* ชิดซ้าย */
 }
 </style>
