@@ -11,6 +11,42 @@
         <n-button type="info">เพิ่มข้อมูล</n-button>
       </n-space>
       <n-divider />
+        <div class="grid lg:flex gap-2 w-full mb-4">
+				<n-form-item label="ค้นหาแผนงาน" class="w-full" :show-feedback="false">
+					<n-input size="large" type="text" placeholder="ค้นหา">
+						<template #suffix>
+							<n-icon>
+								<Icon icon="bx:search-alt" />
+							</n-icon>
+						</template>
+					</n-input>
+				</n-form-item>
+				<n-form-item label="หน่วยงาน" class="w-full" n-form-item :show-feedback="false">
+					<n-select
+						class="my-2 md:my-0"
+						placeholder="กรุณาเลือก"
+					/>
+				</n-form-item>
+				<n-form-item label="สถานะความคืบหน้า" class="w-full" n-form-item :show-feedback="false">
+					<n-select
+						class="my-2 md:my-0"
+						placeholder="กรุณาเลือก"
+					/>
+				</n-form-item>
+			</div>
+
+			<div class="flex gap-2 justify-center w-full mb-4">
+				<NButton size="large" class="flex items-center" type="error" ghost>
+					ล้างการค้นหา
+				</NButton>
+				<NButton type="primary" size="large" class="flex items-center">
+					<!-- <template #icon>
+						<Icon icon="bx-search" class="text-2xl" />
+					</template> -->
+					ค้นหาข้อมูล
+				</NButton>
+			</div>
+      <n-divider />
 
       <n-data-table
         :columns="columns"
@@ -24,7 +60,9 @@
     </n-card>
 
     <div class="mt-4">
-      <n-button type="error" @click="handleLogout">Logout</n-button>
+      <n-space justify="center">
+        <n-button type="error" @click="handleLogout">Logout</n-button>
+      </n-space>
     </div>
   </div>
 </template>
@@ -34,10 +72,10 @@ import { h, reactive, ref, onMounted, onBeforeUnmount } from "vue";
 import { useRouter } from "vue-router";
 import { useUserStore } from "../stores/user";
 import {
-  NButton, NDivider, NDataTable, NTag, NSpace, NIcon, NCard, NDatePicker,
+  NButton, NDivider, NDataTable, NTag, NSpace, NIcon, NCard, NDatePicker, NInput, NFormItem, NSelect,
   type DataTableColumns
 } from "naive-ui";
-import { EyeOutline, CreateOutline, TrashOutline } from "@vicons/ionicons5";
+import { EyeOutline, CreateOutline, TrashOutline, } from "@vicons/ionicons5";
 
 interface RowData {
   id: number;
