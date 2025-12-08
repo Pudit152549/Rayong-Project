@@ -78,6 +78,7 @@ import {
   useMessage
 } from "naive-ui";
 import type { FormInst, FormRules } from "naive-ui";
+import { useDataStore } from "../stores/data";
 
 type Status = "todo" | "in_progress" | "done";
 
@@ -91,6 +92,7 @@ interface AddDataForm {
 
 const router = useRouter();
 const message = useMessage();
+const dataStore = useDataStore();
 
 const formValue = reactive<AddDataForm>({
   project_name: "",
@@ -131,6 +133,20 @@ const handleSubmit = async () => {
   try {
     await formRef.value?.validate();
     // TODO: ส่งข้อมูลไป API ที่นี่
+	dataStore.addRow({
+      project_name: { name: formValue.project_name },
+      assigned_agency: formValue.assigned_agency,
+      responsible_person_name: formValue.responsible_person_name,
+      period: formValue.period,
+      status: formValue.status!
+    });
+	Object.assign(formValue, {
+      project_name: "",
+      assigned_agency: "",
+      responsible_person_name: "",
+      period: null,
+      status: null
+    });
     message.success("บันทึกสำเร็จ");
     router.back();
   } catch {

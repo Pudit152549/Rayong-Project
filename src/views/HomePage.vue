@@ -13,7 +13,7 @@
       <n-divider />
         <div class="grid lg:flex gap-2 w-full mb-4">
 				<n-form-item label="ค้นหาแผนงาน" class="w-full" :show-feedback="false">
-					<n-input size="large" type="text" placeholder="ค้นหา">
+					<n-input v-model:value="dataStore.searchKeyword" size="large" type="text" placeholder="ค้นหา">
 						<template #suffix>
 							<n-icon>
 								<Icon icon="bx:search-alt" />
@@ -74,69 +74,40 @@
 import { h, reactive, ref, onMounted, onBeforeUnmount, computed } from "vue";
 import { useRouter } from "vue-router";
 import { useUserStore } from "../stores/user";
+import { useDataStore } from "../stores/data";
 import {
   NButton, NDivider, NDataTable, NTag, NSpace, NIcon, NCard, NDatePicker, NInput, NFormItem, NSelect,
   type DataTableColumns
 } from "naive-ui";
 import { EyeOutline, CreateOutline, TrashOutline } from "@vicons/ionicons5";
-
-/** ✅ ใช้ status 3 ระดับแทน boolean */
-type Status = "todo" | "in_progress" | "done";
-
-interface RowData {
-  id: number;
-  project_name: { name: string };
-  assigned_agency: string;
-  responsible_person_name: string;
-  period: [number, number] | null;
-  status: Status;
-}
+import type { RowData, Status } from "../stores/data";
 
 const router = useRouter();
 const userStore = useUserStore();
+const dataStore = useDataStore();
 
-/** ✅ Mock data ตัวอย่าง */
-const rows = reactive<RowData[]>([
-  {
-    id: 1,
-    project_name: { name: "ยกระดับคุณภาพการศึกษาเชิงรุก" },
-    assigned_agency: "สำนักงานการศึกษาขั้นพื้นฐาน",
-    responsible_person_name: "สมชาย ใจดี",
-    period: [1758906000000, 1759165200000],
-    status: "in_progress"
-  },
-  {
-    id: 2,
-    project_name: { name: "พัฒนาโครงสร้างพื้นฐานดิจิทัล" },
-    assigned_agency: "สำนักงานพัฒนาธุรกรรมทางอิเล็กทรอนิกส์",
-    responsible_person_name: "สมปอง มีสุข",
-    period: [1759200000000, 1759459200000],
-    status: "todo"
-  }
-]);
-
-/** ✅ ฟิลเตอร์สถานะ + ออปชัน */
-const statusFilter = ref<string | null>(null); // null = ทั้งหมด
 const statusOptions = [
   { label: "To Do", value: "todo" },
   { label: "In Progress", value: "in_progress" },
   { label: "Done", value: "done" }
 ];
 
-const filteredRows = computed(() => {
-  if (!statusFilter.value) return rows;
-  return rows.filter(r => r.status === statusFilter.value);
+const statusFilter = computed({
+  get: () => dataStore.statusFilter,
+  set: (val) => {
+    dataStore.statusFilter = val as Status | null;
+  }
 });
 
+const filteredRows = computed(() => dataStore.filteredRows);
+
 const clearFilters = () => {
-  statusFilter.value = null;
-  // ถ้ามีฟิลเตอร์อื่น ๆ ค่อยเคลียร์เพิ่มตรงนี้
+  dataStore.clearFilters();
 };
 
 const checkedRowKeys = ref<number[]>([]);
 const rowKey = (row: RowData) => row.id;
 
-/** ✅ auto pageSize ให้พอดีจอ */
 const pageSize = ref(8);
 function recomputePageSize() {
   const headerHeight = 300;
@@ -161,7 +132,6 @@ const pagination = reactive({
 const renderIndex = (_: RowData, index: number) =>
   h("span", {}, (pagination.page - 1) * pagination.pageSize + (index + 1));
 
-/** ✅ เรนเดอร์สถานะ 3 ระดับ */
 const statusLabelMap: Record<Status, string> = {
   todo: "To Do",
   in_progress: "In Progress",
@@ -215,7 +185,7 @@ const columns: DataTableColumns<RowData> = [
   { title: "หน่วยงานที่มอบหมาย", key: "agency", minWidth: 240, render: (r) => r.assigned_agency },
   { title: "ผู้รับผิดชอบ", key: "owner", minWidth: 160, render: (r) => r.responsible_person_name },
   { title: "ระยะเวลาที่ได้รับ", key: "period", width: 280, align: "center", render: renderDateRange },
-  { title: "สถานะความคืบหน้า", key: "status", width: 160, align: "center", render: renderStatus }, // ✅ เปลี่ยน key
+  { title: "สถานะความคืบหน้า", key: "status", width: 160, align: "center", render: renderStatus },
   { title: "การจัดการ", key: "action", width: 200, align: "center", render: renderActions }
 ];
 
@@ -226,7 +196,6 @@ const handleLogout = () => {
 const addData = () => {
   router.push({ name: "AddData" });
 };
-
 </script>
 
 
