@@ -1,79 +1,98 @@
-import { defineStore } from 'pinia'
+import { defineStore } from "pinia";
 
-export const useDataStore = defineStore('data', {
+export type Status = "todo" | "in_progress" | "done";
+
+export interface RowData {
+  id: number;
+  project_name: { name: string };
+  assigned_agency: string;
+  responsible_person_name: string;
+  period: [number, number] | null;
+  status: Status;
+}
+
+export const useDataStore = defineStore("data", {
   state: () => ({
-    // เก็บฟอร์มแบบ dynamic (array forms)
-    forms: [
+    rows: [
       {
-        user: { firstname: "", lastname: "" },
-        phone: "",
-        note: ""
+        id: 1,
+        project_name: { name: "ยกระดับคุณภาพการศึกษาเชิงรุก" },
+        assigned_agency: "สำนักงานการศึกษาขั้นพื้นฐาน",
+        responsible_person_name: "สมชาย ใจดี",
+        period: [1758906000000, 1759165200000],
+        status: "in_progress" as Status
+      },
+      {
+        id: 2,
+        project_name: { name: "พัฒนาโครงสร้างพื้นฐานดิจิทัล" },
+        assigned_agency: "สำนักงานพัฒนาธุรกรรมทางอิเล็กทรอนิกส์",
+        responsible_person_name: "สมปอง มีสุข",
+        period: [1759200000000, 1759459200000],
+        status: "todo" as Status
       }
-    ],
-    // รายการพนักงานที่เพิ่มเข้ามา (ในตาราง) TypeScript Generic Array
-    employeeList: [] as Array<{
-      firstname: string,
-      lastname: string,
-      phone: string,
-      note: string
-    }>,
-    // ขนาดของฟอร์ม
-    size: "medium",
-    // กฎ validation สำหรับฟอร์ม (สำหรับการเพิ่มข้อมูล)
-    rules: {
-      "user.firstname": {
-        required: true,
-        message: "Please input firstname",
-        trigger: ["input", "blur"]
-      },
-      "user.lastname": {
-        required: true,
-        message: "Please input lastname",
-        trigger: ["input", "blur"]
-      },
-      phone: {
-        required: true,
-        message: "Please input phone number",
-        trigger: ["input", "blur"]
-      },
-      note: {
-        required: true,
-        message: "Please input note",
-        trigger: ["input", "blur"]
-      }
-    },
-    // state สำหรับเก็บ index ของพนักงานที่เลือกแก้ไข
-    selectedEmployeeIndex: null as number | null
+    ] as RowData[],
+
+    searchKeyword: "",
+    agencyFilter: null as string | null,
+    statusFilter: null as Status | null
   }),
+
+  getters: {
+    filteredRows(state): RowData[] {
+      return state.rows.filter((row) => {
+        const matchKeyword =
+          !state.searchKeyword ||
+          row.project_name.name
+            .toLowerCase()
+            .includes(state.searchKeyword.toLowerCase());
+
+        const matchAgency =
+          !state.agencyFilter || row.assigned_agency === state.agencyFilter;
+
+        const matchStatus =
+          !state.statusFilter || row.status === state.statusFilter;
+
+        return matchKeyword && matchAgency && matchStatus;
+      });
+    }
+  },
+
   actions: {
-    // เพิ่มฟอร์มใหม่ลงใน forms
-    addForm() {
-      this.forms.push({
-        user: { firstname: "", lastname: "" },
-        phone: "",
-        note: ""
+    /** เพิ่มข้อมูลจากหน้า AddDataPage */
+    addRow(payload: {
+      project_name: { name: string };
+      assigned_agency: string;
+      responsible_person_name: string;
+      period: [number, number] | null;
+      status: Status;
+    }) {
+      const maxId = this.rows.reduce((m, r) => Math.max(m, r.id), 0);
+
+      this.rows.push({
+        id: maxId + 1,
+        project_name: payload.project_name,
+        assigned_agency: payload.assigned_agency,
+        responsible_person_name: payload.responsible_person_name,
+        period: payload.period,
+        status: payload.status
       });
     },
-    // ลบฟอร์มที่ index ที่ระบุ
-    removeForm(index: number) {
-      this.forms.splice(index, 1);
+
+    updateRow(id: number, partial: Partial<RowData>) {
+      const idx = this.rows.findIndex((r) => r.id === id);
+      if (idx !== -1) {
+        this.rows[idx] = { ...this.rows[idx], ...partial };
+      }
     },
-    // ลบข้อมูลพนักงานใน employeeList
-    deleteRow(index: number) {
-      this.employeeList.splice(index, 1);
+
+    deleteRow(id: number) {
+      this.rows = this.rows.filter((r) => r.id !== id);
     },
-    // เพิ่มพนักงานใหม่จากข้อมูลฟอร์ม
-    addEmployee(formData: { user: { firstname: string, lastname: string },phone: string, note: string }) {
-      this.employeeList.push({
-        firstname: formData.user.firstname,
-        lastname: formData.user.lastname,
-        phone: formData.phone,
-        note: formData.note
-      });
-    },
-    // Action สำหรับตั้งค่าพนักงานที่เลือกแก้ไข
-    selectEmployee(index: number) {
-      this.selectedEmployeeIndex = index;
+
+    clearFilters() {
+      this.searchKeyword = "";
+      this.agencyFilter = null;
+      this.statusFilter = null;
     }
   }
 });
