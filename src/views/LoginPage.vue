@@ -1,69 +1,88 @@
 <template>
-  <div class="bg-gray-100 p-6 rounded-lg w-180">
-    <!-- Logo -->
-    <div class="flex justify-center mb-4">
-      <img :src="logoUrl" alt="Stream Logo" class="h-20" />
-    </div>
-    <h3 class="text-1xl my-2 text-center">
-      การออกแบบและพัฒนาระบบติดตามความคืบหน้างาน (Scrum Board)
-    </h3>
-
-    <n-card size="huge" hoverable>
-      <h3 class="text-red-500 text-2xl font-bold mb-2">
-        Login
+  <!-- เต็มหน้าจอ + จัดกลาง -->
+  <div class="min-h-screen w-full bg-gray-100 flex items-center justify-center p-4">
+    <!-- กล่องคุมความกว้างแบบ responsive -->
+    <div class="w-full max-w-md">
+      <!-- Logo
+      <div class="flex justify-center mb-3">
+        <img
+          :src="logoUrl"
+          alt="Stream Logo"
+          class="h-24 md:h-28 w-auto object-contain"
+        />
+      </div> -->
+      <h3 class="text-sm md:text-base my-2 text-center text-gray-800">
+        การออกแบบและพัฒนาระบบติดตามความคืบหน้างาน (Scrum Board)
       </h3>
-      <n-divider />
 
-      <n-form
-        ref="formRef"
-        :model="form"
-        :rules="rules"
-        @submit.prevent="handleLogin"
-      >
-        <n-form-item path="email" label="Email :" class="mb-4">
-          <n-input
-            v-model:value="form.email"
-            placeholder="E-mail"
-            class="w-full mt-1 custom-input"
-            type="text"
-          />
-        </n-form-item>
+      <n-card size="huge" hoverable class="w-full">
+        <h3 class="text-red-500 text-2xl font-bold mb-2 text-center">
+          Login
+        </h3>
+        <n-divider />
 
-        <n-form-item path="password" label="Password :" class="mb-4">
-          <n-input
-            v-model:value="form.password"
-            placeholder="Password"
-            class="w-full mt-1 custom-input"
-            type="password"
-            show-password-on="click"
-          />
-        </n-form-item>
-
-        <div>
-          <n-button type="info" attr-type="submit">
-            Login
-          </n-button>
-          <n-divider />
-        </div>
-      </n-form>
-
-      <div class="text-right mt-4">
-        <router-link
-          to="/register"
-          class="px-4 py-2 rounded hover:text-white hover:bg-indigo-700 mt-10"
+        <n-form
+          ref="formRef"
+          :model="form"
+          :rules="rules"
+          @submit.prevent="handleLogin"
         >
-          Register
-        </router-link>
-      </div>
-    </n-card>
+          <n-form-item path="email" label="Email :" class="mb-2">
+            <n-input
+              v-model:value="form.email"
+              placeholder="E-mail"
+              class="w-full mt-1 custom-input"
+              type="text"
+            />
+          </n-form-item>
+
+          <n-form-item path="password" label="Password :" class="mb-2">
+            <n-input
+              v-model:value="form.password"
+              placeholder="Password"
+              class="w-full mt-1 custom-input"
+              type="password"
+              show-password-on="click"
+            />
+          </n-form-item>
+
+          <div class="flex justify-center items-center px-6">
+            <n-button block type="info" attr-type="submit" class="w-full md:w-auto">
+              Login
+            </n-button>
+          </div>
+          <div class="flex justify-center">
+            หรือ
+          </div>
+          <div class="flex justify-center items-center px-6">
+            <n-button block class="w-full md:w-auto">
+              <Icon icon="logos:google-icon" class="text-xl mr-2" />
+              เข้าสู่ระบบด้วย Google
+            </n-button>
+          </div>
+
+          <n-divider />
+        </n-form>
+
+        <div class="text-right">
+          <router-link
+            to="/register"
+            class="px-4 py-2 rounded hover:text-white hover:bg-indigo-700"
+          >
+            Register
+          </router-link>
+        </div>
+      </n-card>
+    </div>
   </div>
 </template>
 
-<script>
+<script setup lang="ts">
 import { reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useUserStore } from "../stores/user";
-import logoUrl from "../assets/Stream.png";
+import { Icon } from "@iconify/vue";
+
 import {
   NButton,
   NDivider,
@@ -74,71 +93,55 @@ import {
   useDialog
 } from "naive-ui";
 
-export default {
-  name: "LoginPage",
-  components: {
-    NButton,
-    NDivider,
-    NInput,
-    NCard,
-    NForm,
-    NFormItem
-  },
-  setup() {
-    const router = useRouter();
-    const userStore = useUserStore();
-    const dialog = useDialog();
+import type { FormInst, FormRules } from "naive-ui";
 
-    const form = reactive({
-      email: "",
-      password: ""
-    });
+/* router / store / dialog */
+const router = useRouter();
+const userStore = useUserStore();
+const dialog = useDialog();
 
-    const rules = {
-      email: [
-        { required: true, message: "Please enter your email", trigger: ["input", "blur"] }
-      ],
-      password: [
-        { required: true, message: "Please enter your password", trigger: ["input", "blur"] }
-      ]
-    };
+/* form state */
+const form = reactive({
+  email: "",
+  password: ""
+});
 
-    const formRef = ref(null);
+/* form rules */
+const rules: FormRules = {
+  email: [
+    { required: true, message: "Please enter your email", trigger: ["input", "blur"] }
+  ],
+  password: [
+    { required: true, message: "Please enter your password", trigger: ["input", "blur"] }
+  ]
+};
 
-    const handleLogin = async () => {
-      await formRef.value?.validate();
-      userStore.login(form.email, form.password);
+/* form ref */
+const formRef = ref<FormInst | null>(null);
 
-      if (userStore.isLoggedIn) {
-        dialog.success({
-          title: "Login Successful",
-          content: `เข้าสู่ระบบสำเร็จ`,
-          positiveText: "ตกลง",
-          onPositiveClick: () => {
-            router.push({ name: "Home" });
-          }
-        });
-      } else {
-        dialog.error({
-          title: "Login Failed",
-          content: "อีเมลหรือรหัสผ่านไม่ถูกต้อง",
-          positiveText: "ยืนยัน"
-        });
+/* submit */
+const handleLogin = async () => {
+  await formRef.value?.validate();
+  userStore.login(form.email, form.password);
+
+  if (userStore.isLoggedIn) {
+    dialog.success({
+      title: "Login Successful",
+      content: "เข้าสู่ระบบสำเร็จ",
+      positiveText: "ตกลง",
+      onPositiveClick: () => {
+        router.push({ name: "Home" });
       }
-    };
-
-    return {
-      form,
-      rules,
-      formRef,
-      handleLogin,
-      userStore,
-      logoUrl
-    };
+    });
+  } else {
+    dialog.error({
+      title: "Login Failed",
+      content: "อีเมลหรือรหัสผ่านไม่ถูกต้อง",
+      positiveText: "ยืนยัน"
+    });
   }
 };
 </script>
-
 
 <style scoped>
 /* space เดิม */

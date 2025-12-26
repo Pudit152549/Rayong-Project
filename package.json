@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@iconify/vue": "^5.0.0",
     "@vicons/ionicons5": "^0.13.0",
     "@vicons/utils": "^0.1.4",
     "echarts": "^6.0.0",
