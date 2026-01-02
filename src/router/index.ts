@@ -5,10 +5,12 @@ import HomePage from '../views/HomePage.vue'
 import ProfilePage from '../views/ProfilePage.vue'
 import AddDataPage from '../views/AddDataPage.vue'
 import EditPage from '../views/EditPage.vue'
+import Dashboard from '../views/Dashboard.vue'
 
 const routes = [
   { path: '/', name: 'Login', component: LoginPage },
   { path: '/home', name: 'Home', component: HomePage },
+  { path: '/dashboard', name: 'Dashboard', component: Dashboard },
   { path: '/register', name: 'Register', component:RegisPage},
   { path: '/profile', name: 'Profile', component:ProfilePage},
   { path: '/add', name: 'AddData', component:AddDataPage},
