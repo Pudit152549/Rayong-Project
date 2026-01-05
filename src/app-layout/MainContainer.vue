@@ -1,65 +1,81 @@
 <template>
-  <div class="h-screen w-screen flex flex-col overflow-hidden">
-    <!-- ✅ Top Navbar -->
-    <header class="h-14 shrink-0 border-b bg-white flex items-center px-4">
-      <div class="flex items-center gap-3">
-        <!-- ปุ่มพับ sidebar (ถ้ามี) -->
-        <n-button quaternary circle @click="toggleSidebar">
+  <div class="min-h-screen w-full bg-gray-50 overflow-x-hidden">
+    <!-- Top Navbar -->
+    <header class="h-14 bg-white border-b flex items-center justify-between px-3 md:px-6 sticky top-0 z-10">
+      <div class="flex items-center gap-2">
+      <!-- Mobile -->
+      <div class="md:hidden">
+        <n-button quaternary circle @click="drawerOpen = true">
           <template #icon>
-            <Icon icon="mdi:menu" />
+            <n-icon><Icon icon="mdi:menu" /></n-icon>
           </template>
         </n-button>
-
-        <div class="font-bold">
+      </div>
+      <!-- Desktop -->
+      <div class="hidden md:block">
+        <n-button quaternary circle @click="toggleSidebar">
+          <template #icon>
+            <n-icon><Icon icon="mdi:menu" /></n-icon>
+          </template>
+        </n-button>
+      </div>
+        <div class="font-bold text-sm md:text-base">
           การออกแบบและพัฒนาระบบติดตามความคืบหน้างาน
         </div>
       </div>
-
-      <div class="ml-auto flex items-center gap-3">
+      <div class="ml-auto flex items-center gap-2 md:gap-3">
         <n-button text @click="goProfile">
-          <template #icon><Icon icon="mdi:account" /></template>
-          โปรไฟล์
+          <template #icon><n-icon><Icon icon="mdi:account" /></n-icon></template>
+          <span class="hidden sm:inline">โปรไฟล์</span>
         </n-button>
         <n-button type="error" ghost @click="logout">
-          <template #icon><Icon icon="mdi:logout" /></template>
-          ออกจากระบบ
+          <template #icon><n-icon><Icon icon="mdi:logout" /></n-icon></template>
+          <span class="hidden sm:inline">ออกจากระบบ</span>
         </n-button>
       </div>
     </header>
 
-    <!-- ✅ Body: Sidebar + Content (อยู่ใต้ navbar) -->
+    <!-- Body -->
     <div class="flex flex-1 min-h-0">
-      <!-- Sidebar -->
-      <aside class="shrink-0 border-r bg-white">
+      <!-- ✅ Desktop Sidebar เท่านั้น -->
+      <aside class="hidden md:block shrink-0 border-r bg-white">
         <MenuBar :collapsed="collapsed" />
       </aside>
 
       <!-- Content -->
-      <main class="flex-1 min-w-0 min-h-0 overflow-auto bg-gray-100 p-6">
+      <main class="flex-1 min-w-0 min-h-0 overflow-auto overflow-x-hidden bg-gray-100 p-3 md:p-6">
         <router-view />
       </main>
     </div>
+
+    <!-- ✅ Mobile Drawer -->
+    <n-drawer v-model:show="drawerOpen" placement="left" :width="260">
+      <n-drawer-content title="เมนู" closable>
+        <MenuBar :collapsed="false" @navigate="drawerOpen = false" />
+      </n-drawer-content>
+    </n-drawer>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import { NButton } from "naive-ui";
+import { NButton, NDrawer, NDrawerContent, NIcon } from "naive-ui";
 import { Icon } from "@iconify/vue";
 import MenuBar from "@/app-layout/MenuBar/index.vue";
 import { useUserStore } from "@/stores/user";
 
 const collapsed = ref(false);
+const drawerOpen = ref(false);
+
 const router = useRouter();
 const userStore = useUserStore();
 
 const toggleSidebar = () => (collapsed.value = !collapsed.value);
-
 const goProfile = () => router.push({ name: "Profile" });
 
 const logout = () => {
   userStore.logout();
-  router.push("/login");
+  router.push({ name: "Login" });
 };
 </script>

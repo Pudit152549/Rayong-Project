@@ -78,6 +78,7 @@ import { reactive, ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import { NButton, NDivider, NInput, NCard, NForm, NFormItem, useNotification, useDialog } from "naive-ui";
 import type { FormInst, FormRules, NotificationType } from "naive-ui";
+import { useUserStore } from "@/stores/user";
 
 defineOptions({ name: "RegisPage" });
 
@@ -89,6 +90,7 @@ interface RegisterForm {
   confirmPassword: string;
 }
 
+const userStore = useUserStore();
 const router = useRouter();
 const dialog = useDialog();
 const notification = useNotification();
@@ -133,13 +135,25 @@ const handleRegister = async () => {
     return;
   }
 
+  const res = userStore.register({
+    firstname: form.firstname,
+    lastname: form.lastname,
+    email: form.email,
+    password: form.password,
+    age: null,
+    gender: ""
+  });
+
+  if (!res.ok) {
+    notify("error", "สมัครไม่สำเร็จ", res.message);
+    return;
+  }
+
   dialog.success({
     title: "Register Successful",
     content: "ลงทะเบียนสำเร็จ",
     positiveText: "ตกลง",
-    onPositiveClick: () => {
-      router.push("/");
-    }
+    onPositiveClick: () => router.push({ name: "Login" })
   });
 };
 </script>

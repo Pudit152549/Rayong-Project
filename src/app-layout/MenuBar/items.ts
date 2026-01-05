@@ -1,4 +1,3 @@
-// src/app-layout/MenuBar/items.ts
 import type { MenuOption } from "naive-ui";
 import { h } from "vue";
 import { RouterLink } from "vue-router";

@@ -1,6 +1,6 @@
 <template>
   <!-- เต็มหน้าจอ + จัดกลาง -->
-  <div class="min-h-screen w-full bg-gray-100 flex items-center justify-center p-4">
+  <div class="min-h-screen w-full bg-gray-100 flex items-center justify-center px-4">
     <!-- กล่องคุมความกว้างแบบ responsive -->
     <div class="w-full max-w-md">
       <!-- Logo
@@ -16,7 +16,7 @@
       </h3>
 
       <n-card size="huge" hoverable class="w-full">
-        <h3 class="text-red-500 text-2xl font-bold mb-2 text-center">
+        <h3 class="text-red-500 text-2xl font-bold text-center">
           Login
         </h3>
         <n-divider />
@@ -119,24 +119,26 @@ const rules: FormRules = {
 /* form ref */
 const formRef = ref<FormInst | null>(null);
 
-/* submit */
 const handleLogin = async () => {
-  await formRef.value?.validate();
-  userStore.login(form.email, form.password);
+  try {
+    await formRef.value?.validate();
+  } catch {
+    return;
+  }
 
-  if (userStore.isLoggedIn) {
+const res = userStore.login(form.email, form.password);
+
+  if (res.ok) {
     dialog.success({
       title: "Login Successful",
       content: "เข้าสู่ระบบสำเร็จ",
       positiveText: "ตกลง",
-      onPositiveClick: () => {
-        router.push({ name: "Home" });
-      }
+      onPositiveClick: () => router.push({ name: "Dashboard" }) // หรือ "/app/dashboard"
     });
   } else {
     dialog.error({
       title: "Login Failed",
-      content: "อีเมลหรือรหัสผ่านไม่ถูกต้อง",
+      content: res.message,
       positiveText: "ยืนยัน"
     });
   }

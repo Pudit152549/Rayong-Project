@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white p-6 w-full">
+  <div class="p-6 w-full">
     <div class="text-center">
       <h2 class="gradient-text text-2xl font-bold mb-2">
         ระบบติดตามความคืบหน้างาน (Scrum Board)
@@ -99,16 +99,17 @@
 				</NButton>
 			</div>
       <n-divider />
-
-      <n-data-table
-        :columns="columns"
-        :data="filteredRows"
-        :row-key="rowKey"
-        v-model:checked-row-keys="checkedRowKeys"
-        size="small"
-        :pagination="pagination"
-        bordered
-      />
+      <div class="w-full overflow-x-auto">
+        <n-data-table
+          :columns="columns"
+          :data="filteredRows"
+          :row-key="rowKey"
+          v-model:checked-row-keys="checkedRowKeys"
+          size="small"
+          :pagination="pagination"
+          bordered
+        />
+      </div>
     </n-card>
   </div>
 </template>

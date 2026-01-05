@@ -20,6 +20,17 @@ const router = createRouter({
         },
       ],
     },
+    {
+      path: "/register",
+      component: BlankLayout,
+      children: [
+        {
+          path: "",
+          name: "Register",
+          component: () => import("@/views/RegisPage.vue"),
+        },
+      ],
+    },
 
     // 🔹 Layout หลัก (มี sidebar)
     {

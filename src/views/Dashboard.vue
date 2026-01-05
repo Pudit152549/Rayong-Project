@@ -41,13 +41,15 @@
       <!-- Recent Tasks -->
       <n-card>
         <p class="font-semibold mb-3">งานล่าสุด</p>
-        <n-data-table
-          :columns="columns"
-          :data="recentRows"
-          :row-key="rowKey"
-          size="small"
-          bordered
-        />
+        <div class="w-full overflow-x-auto">
+          <n-data-table
+            :columns="columns"
+            :data="recentRows"
+            :row-key="rowKey"
+            size="small"
+            bordered
+          />
+        </div>
       </n-card>
     </div>
   </div>

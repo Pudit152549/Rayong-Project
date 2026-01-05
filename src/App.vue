@@ -1,5 +1,13 @@
 <script setup lang="ts">
 import { NMessageProvider, NDialogProvider, NNotificationProvider } from 'naive-ui'
+import { onMounted } from "vue";
+import { useUserStore } from "@/stores/user";
+
+const userStore = useUserStore();
+
+onMounted(() => {
+  userStore.initAuth();
+});
 </script>
 
 <template>
