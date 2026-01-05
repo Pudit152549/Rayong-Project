@@ -110,12 +110,6 @@
         bordered
       />
     </n-card>
-
-    <div class="mt-4">
-      <n-space justify="center">
-        <n-button type="error" @click="handleLogout">Logout</n-button>
-      </n-space>
-    </div>
   </div>
 </template>
 
@@ -232,17 +226,13 @@ const renderActions = (row: RowData) =>
 const columns: DataTableColumns<RowData> = [
   { title: "ลำดับ", key: "index", align: "center", width: 100, render: renderIndex },
   { title: "ชื่อแผนงานที่รับผิดชอบ", key: "strategy", minWidth: 220, render: (r) => r.project_name?.name },
-  { title: "หน่วยงานที่มอบหมาย", key: "agency", minWidth: 240, render: (r) => r.assigned_agency },
+  { title: "ผู้มอบหมาย", key: "agency", minWidth: 240, render: (r) => r.assigned_agency },
   { title: "ผู้รับผิดชอบ", key: "owner", minWidth: 160, render: (r) => r.responsible_person_name },
   { title: "ระยะเวลาที่ได้รับ", key: "period", width: 280, align: "center", render: renderDateRange },
   { title: "สถานะความคืบหน้า", key: "status", width: 160, align: "center", render: renderStatus },
   { title: "การจัดการ", key: "action", width: 200, align: "center", render: renderActions }
 ];
 
-const handleLogout = () => {
-  userStore.logout();
-  router.push("/");
-};
 const addData = () => {
   router.push({ name: "AddData" });
 };
