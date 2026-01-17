@@ -120,7 +120,18 @@ import { useRouter } from "vue-router";
 import { useUserStore } from "../stores/user";
 import { useDataStore } from "../stores/data";
 import {
-  NButton, NDivider, NDataTable, NTag, NSpace, NIcon, NCard, NDatePicker, NInput, NFormItem, NSelect,
+  NButton, 
+  NDivider, 
+  NDataTable, 
+  NTag, 
+  NSpace, 
+  NIcon, 
+  NCard, 
+  NDatePicker, 
+  NInput, 
+  NFormItem, 
+  NSelect,
+  useDialog,
   type DataTableColumns
 } from "naive-ui";
 import { EyeOutline, CreateOutline, TrashOutline } from "@vicons/ionicons5";
@@ -219,15 +230,31 @@ const renderActions = (row: RowData) =>
     ),
     h(
       NButton,
-      { circle: true, tertiary: true, type: "error", size: "small", onClick: () => console.log("delete", row) },
+      { circle: true, tertiary: true, type: "error", size: "small", onClick: () => confirmDelete(row) },
       { icon: () => renderIcon(TrashOutline) }
     )
   ]);
 
+const dialog = useDialog();
+
+const confirmDelete = (row: RowData) => {
+  dialog.error({
+    title: "ยืนยันการลบ",
+    content: "แน่ใจหรือไม่ว่าจะลบข้อมูลนี้?",
+    positiveText: "ยืนยัน",
+    negativeText: "ยกเลิก",
+    onPositiveClick: () => {
+      // ✅ ตรงนี้ค่อยผูกกับ store/api จริงตอนพร้อม
+      // ตัวอย่าง:
+      // dataStore.deleteRow(row.id)
+      console.log("confirm delete:", row);
+    }
+  });
+};
+
 const columns: DataTableColumns<RowData> = [
   { title: "ลำดับ", key: "index", align: "center", width: 100, render: renderIndex },
   { title: "ชื่อแผนงานที่รับผิดชอบ", key: "strategy", minWidth: 220, render: (r) => r.project_name?.name },
-  { title: "ผู้มอบหมาย", key: "agency", minWidth: 240, render: (r) => r.assigned_agency },
   { title: "ผู้รับผิดชอบ", key: "owner", minWidth: 160, render: (r) => r.responsible_person_name },
   { title: "ระยะเวลาที่ได้รับ", key: "period", width: 280, align: "center", render: renderDateRange },
   { title: "สถานะความคืบหน้า", key: "status", width: 160, align: "center", render: renderStatus },

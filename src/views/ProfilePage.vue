@@ -16,23 +16,19 @@
           <!-- โหมดแสดงผล -->
           <h4 v-if="!isEditing" class="details flex flex-col gap-4">
             <div class="item">
-              <strong class="mr-2">ชื่อผู้ใช้:</strong>
-              <span>{{ username }}</span>
+              <div class="mr-2 font-semibold">ชื่อผู้ใช้: {{ username }}</div>
             </div>
 
             <div class="item">
-              <strong class="mr-2">ตำแหน่ง:</strong>
-              <span>{{ position || "-" }}</span>
+              <div class="mr-2 font-semibold">ตำแหน่ง: {{ position || "-" }}</div>
             </div>
 
             <div class="item">
-              <strong class="mr-2">หน่วยงาน:</strong>
-              <span>{{ department || "-" }}</span>
+              <div class="mr-2 font-semibold">หน่วยงาน: {{ department || "-" }}</div>
             </div>
 
             <div class="item">
-              <strong class="mr-2">อีเมล:</strong>
-              <span>{{ userStore.email || "-" }}</span>
+              <div class="mr-2 font-semibold">อีเมล: {{ userStore.email || "-" }}</div>
             </div>
           </h4>
 

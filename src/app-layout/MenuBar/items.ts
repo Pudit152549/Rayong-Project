@@ -23,10 +23,10 @@ export function getMenuItems(): MenuOption[] {
       label: () =>
         h(
           RouterLink,
-          { to: { name: "Home" } },
+          { to: { name: "Board" } },
           { default: () => "Scrum Board" }
         ),
-      key: "Home",
+      key: "Board",
       icon: renderIcon("material-symbols:view-list-outline"),
     }
   ];

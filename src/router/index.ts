@@ -39,7 +39,7 @@ const router = createRouter({
       children: [
         { path: "", redirect: "/app/dashboard" },
         { path: "dashboard", name: "Dashboard", component: () => import("@/views/Dashboard.vue") },
-        { path: "home", name: "Home", component: () => import("@/views/HomePage.vue") },
+        { path: "board", name: "Board", component: () => import("@/views/BoardPage.vue") },
         { path: "add", name: "AddData", component: () => import("@/views/AddDataPage.vue") },
         { path: "edit/:id", name: "Edit", component: () => import("@/views/EditPage.vue"), props: true },
         { path: "profile", name: "Profile", component: () => import("@/views/ProfilePage.vue") },
