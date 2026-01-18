@@ -5,6 +5,7 @@ export type Status = "todo" | "in_progress" | "done";
 export interface RowData {
   id: number;
   project_name: { name: string };
+  assigned_agency: string;
   responsible_person_name: string;
   period: [number, number] | null;
   status: Status;
@@ -16,6 +17,7 @@ export const useDataStore = defineStore("data", {
       {
         id: 1,
         project_name: { name: "ยกระดับคุณภาพการศึกษาเชิงรุก" },
+        assigned_agency: "สำนักงานการศึกษาขั้นพื้นฐาน",
         responsible_person_name: "สมชาย ใจดี",
         period: [1758906000000, 1759165200000],
         status: "in_progress" as Status
@@ -23,6 +25,7 @@ export const useDataStore = defineStore("data", {
       {
         id: 2,
         project_name: { name: "พัฒนาโครงสร้างพื้นฐานดิจิทัล" },
+        assigned_agency: "สำนักงานพัฒนาธุรกรรมทางอิเล็กทรอนิกส์",
         responsible_person_name: "สมปอง มีสุข",
         period: [1759200000000, 1759459200000],
         status: "todo" as Status
@@ -43,10 +46,13 @@ export const useDataStore = defineStore("data", {
             .toLowerCase()
             .includes(state.searchKeyword.toLowerCase());
 
+        const matchAgency =
+          !state.agencyFilter || row.assigned_agency === state.agencyFilter;
+
         const matchStatus =
           !state.statusFilter || row.status === state.statusFilter;
 
-        return matchKeyword && matchStatus;
+        return matchKeyword && matchAgency && matchStatus;
       });
     }
   },
@@ -65,6 +71,7 @@ export const useDataStore = defineStore("data", {
       this.rows.push({
         id: maxId + 1,
         project_name: payload.project_name,
+        assigned_agency: payload.assigned_agency,
         responsible_person_name: payload.responsible_person_name,
         period: payload.period,
         status: payload.status

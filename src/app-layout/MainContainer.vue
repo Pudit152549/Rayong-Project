@@ -19,7 +19,7 @@
           </template>
         </n-button>
       </div>
-        <div class="font-bold text-sm md:text-base">
+        <div class="font-bold text-sm md:text-base md:sticky md:top-0">
           การออกแบบและพัฒนาระบบติดตามความคืบหน้างาน
         </div>
       </div>

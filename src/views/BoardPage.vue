@@ -74,6 +74,7 @@
 					<n-select
 						class="my-2 md:my-0"
 						placeholder="กรุณาเลือก"
+            size="large"
 					/>
 				</n-form-item>
         <n-form-item label="สถานะความคืบหน้า" class="w-full" :show-feedback="false">
@@ -83,6 +84,7 @@
             clearable
             class="my-2 md:my-0"
             placeholder="กรุณาเลือก"
+            size="large"
           />
         </n-form-item>
 			</div>
@@ -92,9 +94,9 @@
           ล้างการค้นหา
         </NButton>
 				<NButton type="primary" size="large" class="flex items-center">
-					<!-- <template #icon>
+					<template #icon>
 						<Icon icon="bx-search" class="text-2xl" />
-					</template> -->
+					</template>
 					ค้นหาข้อมูล
 				</NButton>
 			</div>
@@ -111,6 +113,59 @@
         />
       </div>
     </n-card>
+    <n-modal v-model:show="showViewModal" :mask-closable="false">
+      <n-card
+        style="width: 820px; max-width: calc(100vw - 32px);"
+        title="ดูรายละเอียดแผนงาน"
+        :bordered="false"
+        size="huge"
+        role="dialog"
+        aria-modal="true"
+      >
+        <n-form v-if="selectedRow" label-placement="top" size="large">
+          <div class="grid md:grid-cols-2 gap-4">
+            <n-form-item label="ชื่อแผนงานที่รับผิดชอบ">
+              <n-input :value="selectedRow.project_name?.name" disabled />
+            </n-form-item>
+            <n-form-item label="ผู้มอบหมาย">
+              <n-input :value="selectedRow.assigned_agency" disabled />
+            </n-form-item>
+            <n-form-item label="ผู้รับผิดชอบ">
+              <n-input :value="selectedRow.responsible_person_name" disabled />
+            </n-form-item>
+            <n-form-item label="สถานะความคืบหน้า">
+              <n-select
+                :value="selectedRow.status"
+                :options="statusOptions"
+                disabled
+                class="w-full"
+              />
+            </n-form-item>
+            <n-form-item label="ระยะเวลาที่ได้รับ" class="md:col-span-2">
+              <n-date-picker
+                type="daterange"
+                :value="selectedRow.period"
+                disabled
+                class="w-full"
+                clearable
+              />
+            </n-form-item>
+          </div>
+        </n-form>
+        <template #footer>
+          <div class="flex justify-end gap-2">
+            <n-button @click="closeViewModal">ปิด</n-button>
+            <!-- <n-button
+              type="warning"
+              @click="goEditFromModal"
+              :disabled="!selectedRow"
+            >
+              แก้ไข
+            </n-button> -->
+          </div>
+        </template>
+      </n-card>
+    </n-modal>
   </div>
 </template>
 
@@ -129,8 +184,10 @@ import {
   NCard, 
   NDatePicker, 
   NInput, 
+  NForm,
   NFormItem, 
   NSelect,
+  NModal,
   useDialog,
   type DataTableColumns
 } from "naive-ui";
@@ -220,12 +277,12 @@ const renderActions = (row: RowData) =>
   h("div", { class: "flex items-center justify-center gap-2" }, [
     h(
       NButton,
-      { circle: true, tertiary: true, type: "info", size: "small", onClick: () => console.log("view", row) },
+      { circle: true, tertiary: true, type: "info", size: "small", onClick: () => openViewModal(row) },
       { icon: () => renderIcon(EyeOutline) }
     ),
     h(
       NButton,
-      { circle: true, tertiary: true, type: "warning", size: "small", onClick: () => console.log("edit", row) },
+      { circle: true, tertiary: true, type: "warning", size: "small", onClick: () => router.push({ name: "Edit", params: { id: row.id } }) },
       { icon: () => renderIcon(CreateOutline) }
     ),
     h(
@@ -234,6 +291,25 @@ const renderActions = (row: RowData) =>
       { icon: () => renderIcon(TrashOutline) }
     )
   ]);
+
+const showViewModal = ref(false);
+const selectedRow = ref<RowData | null>(null);
+
+const openViewModal = (row: RowData) => {
+  selectedRow.value = row;
+  showViewModal.value = true;
+};
+
+const closeViewModal = () => {
+  showViewModal.value = false;
+  selectedRow.value = null;
+};
+
+// const goEditFromModal = () => {
+//   if (!selectedRow.value) return;
+//   showViewModal.value = false;
+//   router.push({ name: "Edit", params: { id: selectedRow.value.id } });
+// };
 
 const dialog = useDialog();
 
@@ -246,7 +322,7 @@ const confirmDelete = (row: RowData) => {
     onPositiveClick: () => {
       // ✅ ตรงนี้ค่อยผูกกับ store/api จริงตอนพร้อม
       // ตัวอย่าง:
-      // dataStore.deleteRow(row.id)
+      dataStore.deleteRow(row.id);
       console.log("confirm delete:", row);
     }
   });
@@ -254,8 +330,9 @@ const confirmDelete = (row: RowData) => {
 
 const columns: DataTableColumns<RowData> = [
   { title: "ลำดับ", key: "index", align: "center", width: 100, render: renderIndex },
-  { title: "ชื่อแผนงานที่รับผิดชอบ", key: "strategy", minWidth: 220, render: (r) => r.project_name?.name },
-  { title: "ผู้รับผิดชอบ", key: "owner", minWidth: 160, render: (r) => r.responsible_person_name },
+  { title: "ชื่อแผนงานที่รับผิดชอบ", key: "strategy", minWidth: 220, render: (row) => row.project_name?.name },
+  { title: "ผู้มอบหมาย", key: "agency", minWidth: 240, render: (row) => row.assigned_agency },
+  { title: "ผู้รับผิดชอบ", key: "owner", minWidth: 120, render: (row) => row.responsible_person_name },
   { title: "ระยะเวลาที่ได้รับ", key: "period", width: 280, align: "center", render: renderDateRange },
   { title: "สถานะความคืบหน้า", key: "status", width: 160, align: "center", render: renderStatus },
   { title: "การจัดการ", key: "action", width: 200, align: "center", render: renderActions }
