@@ -2,14 +2,14 @@
   <div class="page p-4 md:p-8 align-center">
     <n-card class="header" hoverable content-style="padding:0">
       <div class="user-info flex flex-col gap-4 p-4 md:p-10">
-        <div class="propic flex justify-center items-center md:justify-start md:items-start">
-          <n-avatar :size="160" :src="avatarUrl" />
+        <div class="propic flex justify-center items-center md:justify-start md:items-start rounded-full">
+          <n-avatar round :size="160" :src="avatarUrl" />
         </div>
 
         <div class="info grow flex flex-col justify-center">
           <div class="name mb-2">
             <h1 class="text-2xl font-semibold">
-              {{ userStore.fullName || `${userStore.firstname} ${userStore.lastname}` || "-" }}
+              {{ profile.fullName || `${profile.firstname} ${profile.lastname}`.trim() || "-" }}
             </h1>
           </div>
 
@@ -28,7 +28,7 @@
             </div>
 
             <div class="item">
-              <div class="mr-2 font-semibold">อีเมล: {{ userStore.email || "-" }}</div>
+              <div class="mr-2 font-semibold">อีเมล: {{ profile.email || "-" }}</div>
             </div>
           </h4>
 
@@ -50,7 +50,7 @@
                 <n-input v-model:value="form.lastname" placeholder="Lastname" />
               </n-form-item>
 
-              <!-- 2 ช่องนี้ mock ไปก่อน (ยังไม่อยู่ใน userStore) -->
+              <!-- mock fields -->
               <n-form-item label="ตำแหน่ง" path="position">
                 <n-input v-model:value="form.position" placeholder="ตำแหน่ง" />
               </n-form-item>
@@ -84,30 +84,40 @@
 import { computed, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useUserStore } from "../stores/user";
-import { NAvatar, NCard, NButton, NForm, NFormItem, NInput, useDialog, useMessage } from "naive-ui";
+import {
+  NAvatar,
+  NCard,
+  NButton,
+  NForm,
+  NFormItem,
+  NInput,
+  useDialog,
+  useMessage
+} from "naive-ui";
 import type { FormInst, FormRules } from "naive-ui";
 
-// ✅ ถ้ามีรูปใน assets ก็ใส่ได้ (ไม่มีไม่เป็นไร)
-const avatarUrl = ""; // เช่น import avatarUrl from "../assets/avatar.png"
+const avatarUrl = "";
 
 const router = useRouter();
 const userStore = useUserStore();
 const dialog = useDialog();
 const message = useMessage();
 
+const profile = computed(() => userStore.profile);
+
 const isEditing = ref(false);
 const formRef = ref<FormInst | null>(null);
 
-// mock fields (เพราะ userStore ยังไม่มี position/department)
+// mock fields
 const position = ref("นักศึกษา");
 const department = ref("สาขาเทคโนโลยีสารสนเทศ");
 
-// ชื่อผู้ใช้: ใช้ email ก่อน ถ้าไม่มีค่อย fallback
-const username = computed(() => userStore.email || "guest");
+// ชื่อผู้ใช้
+const username = computed(() => profile.value.email || "guest");
 
 const form = reactive({
-  firstname: userStore.firstname || "",
-  lastname: userStore.lastname || "",
+  firstname: profile.value.firstname || "",
+  lastname: profile.value.lastname || "",
   position: position.value,
   department: department.value
 });
@@ -118,8 +128,8 @@ const rules: FormRules = {
 };
 
 function startEdit() {
-  form.firstname = userStore.firstname || "";
-  form.lastname = userStore.lastname || "";
+  form.firstname = profile.value.firstname || "";
+  form.lastname = profile.value.lastname || "";
   form.position = position.value;
   form.department = department.value;
   isEditing.value = true;
@@ -134,15 +144,14 @@ async function saveProfile() {
   try {
     await formRef.value?.validate();
 
-    // ✅ อัปเดตข้อมูลที่ store มีอยู่จริง
     userStore.updateProfile({
       firstname: form.firstname,
       lastname: form.lastname,
-      age: userStore.age ?? 19,       // ถ้าอยากแก้ age เพิ่มในฟอร์มได้
-      gender: userStore.gender || "male"
+      age: profile.value.age ?? 19,
+      gender: profile.value.gender || "male"
     });
 
-    // ✅ เก็บ mock fields ไว้ชั่วคราวในหน้า (ถ้าจะเก็บจริง ควรเพิ่ม field ใน userStore)
+    // mock fields
     position.value = form.position;
     department.value = form.department;
 
@@ -165,7 +174,7 @@ function handleLogout() {
     negativeText: "ยกเลิก",
     onPositiveClick: () => {
       userStore.logout();
-      router.push({ name: "Login" }); // หรือ "/" แล้วแต่ router ของคุณ
+      router.push({ name: "Login" });
     }
   });
 }

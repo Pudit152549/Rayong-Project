@@ -4,52 +4,55 @@
       <h2 class="text-2xl font-bold gradient-text text-center">
         Dashboard
       </h2>
+      <n-card size="huge" hoverable class="w-full max-w-screen-xl mx-auto">
+        <!-- Summary Cards -->
+        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-5">
+          <n-card class="shadow-md py-3">
+            <p class="text-gray-500">งานทั้งหมด</p>
+            <h1 class="text-3xl font-bold">{{ total }}</h1>
+          </n-card>
 
-      <!-- Summary Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <n-card>
-          <p class="text-gray-500">งานทั้งหมด</p>
-          <h1 class="text-3xl font-bold">{{ total }}</h1>
-        </n-card>
+          <n-card class="shadow-md py-3">
+            <p class="text-red-500">To Do</p>
+            <h1 class="text-3xl font-bold">{{ todoCount }}</h1>
+          </n-card>
 
-        <n-card>
-          <p class="text-red-500">To Do</p>
-          <h1 class="text-3xl font-bold">{{ todoCount }}</h1>
-        </n-card>
+          <n-card class="shadow-md py-3">
+            <p class="text-yellow-500">In Progress</p>
+            <h1 class="text-3xl font-bold">{{ inProgressCount }}</h1>
+          </n-card>
 
-        <n-card>
-          <p class="text-yellow-500">In Progress</p>
-          <h1 class="text-3xl font-bold">{{ inProgressCount }}</h1>
-        </n-card>
-
-        <n-card>
-          <p class="text-green-600">Done</p>
-          <h1 class="text-3xl font-bold">{{ doneCount }}</h1>
-        </n-card>
-      </div>
-
-      <!-- Progress -->
-      <n-card>
-        <p class="mb-2 font-semibold">ความคืบหน้าโดยรวม</p>
-        <n-progress
-          type="line"
-          :percentage="progressPercent"
-          status="success"
-        />
-      </n-card>
-
-      <!-- Recent Tasks -->
-      <n-card>
-        <p class="font-semibold mb-3">งานล่าสุด</p>
-        <div class="w-full overflow-x-auto">
-          <n-data-table
-            :columns="columns"
-            :data="recentRows"
-            :row-key="rowKey"
-            size="small"
-            bordered
-          />
+          <n-card class="shadow-md py-3">
+            <p class="text-green-600">Done</p>
+            <h1 class="text-3xl font-bold">{{ doneCount }}</h1>
+          </n-card>
         </div>
+
+        <!-- Progress -->
+        <div class="my-6">
+          <n-card class="shadow-md py-3">
+            <p class="mb-2 font-semibold">ความคืบหน้าโดยรวม</p>
+            <n-progress
+              type="line"
+              :percentage="progressPercent"
+              status="success"
+            />
+          </n-card>
+        </div>
+
+        <!-- Recent Tasks -->
+        <n-card class="shadow-md py-3">
+          <p class="font-semibold mb-3">งานล่าสุด</p>
+          <div class="w-full overflow-x-auto">
+            <n-data-table
+              :columns="columns"
+              :data="recentRows"
+              :row-key="rowKey"
+              size="small"
+              bordered
+            />
+          </div>
+        </n-card>
       </n-card>
     </div>
   </div>

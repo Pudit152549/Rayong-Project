@@ -70,13 +70,6 @@
 						</template>
 					</n-input>
 				</n-form-item>
-				<n-form-item label="หน่วยงาน" class="w-full" n-form-item :show-feedback="false">
-					<n-select
-						class="my-2 md:my-0"
-						placeholder="กรุณาเลือก"
-            size="large"
-					/>
-				</n-form-item>
         <n-form-item label="สถานะความคืบหน้า" class="w-full" :show-feedback="false">
           <n-select
             v-model:value="statusFilter"
@@ -102,15 +95,17 @@
 			</div>
       <n-divider />
       <div class="w-full overflow-x-auto">
-        <n-data-table
-          :columns="columns"
-          :data="filteredRows"
-          :row-key="rowKey"
-          v-model:checked-row-keys="checkedRowKeys"
-          size="small"
-          :pagination="pagination"
-          bordered
-        />
+        <n-card class="shadow-md py-3">
+          <n-data-table
+            :columns="columns"
+            :data="filteredRows"
+            :row-key="rowKey"
+            v-model:checked-row-keys="checkedRowKeys"
+            size="small"
+            :pagination="pagination"
+            bordered
+          />
+        </n-card>
       </div>
     </n-card>
     <n-modal v-model:show="showViewModal" :mask-closable="false">
@@ -172,7 +167,7 @@
 <script setup lang="ts">
 import { h, reactive, ref, onMounted, onBeforeUnmount, computed } from "vue";
 import { useRouter } from "vue-router";
-import { useUserStore } from "../stores/user";
+// import { useUserStore } from "../stores/user";
 import { useDataStore } from "../stores/data";
 import {
   NButton, 
@@ -196,7 +191,7 @@ import type { RowData, Status } from "../stores/data";
 import { Icon } from "@iconify/vue"
 
 const router = useRouter();
-const userStore = useUserStore();
+// const userStore = useUserStore();
 const dataStore = useDataStore();
 
 const statusOptions = [
