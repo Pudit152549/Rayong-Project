@@ -1,9 +1,7 @@
 <template>
   <div class="p-6 w-full">
     <div class="text-center">
-      <h2 class="gradient-text text-2xl font-bold mb-2">
-        แก้ไขข้อมูลแผนงาน
-      </h2>
+      <h2 class="gradient-text text-2xl font-bold mb-2">แก้ไขข้อมูลแผนงาน</h2>
     </div>
 
     <n-card size="huge" hoverable class="w-full max-w-screen-xl mx-auto">
@@ -14,12 +12,10 @@
 
       <n-divider />
 
-      <!-- ไม่พบข้อมูลตาม id -->
       <n-card v-if="!currentRow" title="ไม่พบข้อมูล" class="shadow-md">
         ไม่พบรายการที่ต้องการแก้ไข (id: {{ idNumber }})
       </n-card>
 
-      <!-- ฟอร์มแก้ไข -->
       <n-form
         v-else
         ref="formRef"
@@ -33,14 +29,15 @@
             <n-input v-model:value="editForm.projectName" placeholder="กรอกชื่อแผนงาน" />
           </n-form-item>
 
-          <n-form-item label="ผู้รับผิดชอบ" path="responsiblePerson">
-            <n-input
-              v-model:value="editForm.responsiblePerson"
-              placeholder="กรอกชื่อผู้รับผิดชอบ"
-            />
+          <n-form-item label="ผู้มอบหมาย" path="assignedAgency">
+            <n-input v-model:value="editForm.assignedAgency" placeholder="กรอกผู้มอบหมาย/หน่วยงาน" />
           </n-form-item>
 
-          <n-form-item label="ระยะเวลาที่ได้รับ" path="period">
+          <n-form-item label="ผู้รับผิดชอบ" path="responsiblePerson">
+            <n-input v-model:value="editForm.responsiblePerson" placeholder="กรอกชื่อผู้รับผิดชอบ" />
+          </n-form-item>
+
+          <n-form-item label="ระยะเวลาที่ได้รับ" path="period" class="md:col-span-2">
             <n-date-picker
               v-model:value="editForm.period"
               type="daterange"
@@ -50,12 +47,13 @@
             />
           </n-form-item>
 
-          <n-form-item label="สถานะความคืบหน้า" path="status">
+          <n-form-item label="สถานะความคืบหน้า" path="status" class="md:col-span-2">
             <n-select
               v-model:value="editForm.status"
               :options="statusOptions"
               placeholder="เลือกสถานะ"
               clearable
+              class="w-full"
             />
           </n-form-item>
         </div>
@@ -67,8 +65,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watchEffect } from "vue";
 import { useRouter } from "vue-router";
-import type { FormInst } from "naive-ui";
-import type { FormItemRule, FormValidationError } from "naive-ui";
+import type { FormInst, FormItemRule } from "naive-ui";
 import {
   NCard,
   NDivider,
@@ -82,16 +79,17 @@ import {
   useDialog,
   useMessage
 } from "naive-ui";
-import { useDataStore } from "../stores/data";
-import type { Status } from "../stores/data";
 
-// router: { path: "edit/:id", props: true }
+import { useDeptStore } from "@/stores/departmentStore";
+import type { RowData, Status } from "@/stores/types";
+
 const props = defineProps<{ id: string | number }>();
 
 const router = useRouter();
-const dataStore = useDataStore();
 const dialog = useDialog();
 const message = useMessage();
+
+const { from, deptKey, activeStore } = useDeptStore();
 
 const idNumber = computed(() => Number(props.id));
 
@@ -101,45 +99,45 @@ const statusOptions = [
   { label: "Done", value: "done" }
 ];
 
-const currentRow = computed(() => dataStore.rows.find((r) => r.id === idNumber.value));
+// ✅ หา row จาก store ของแผนกที่ถูกต้อง
+const currentRow = computed<RowData | undefined>(() =>
+  activeStore.value.rows.find((r: RowData) => r.id === idNumber.value)
+);
 
 const editForm = reactive<{
   projectName: string;
+  assignedAgency: string;
   responsiblePerson: string;
   period: [number, number] | null;
   status: Status | null;
 }>({
   projectName: "",
+  assignedAgency: "",
   responsiblePerson: "",
   period: null,
   status: null
 });
 
-// เติมค่าจาก row ที่กดแก้ไข
 watchEffect(() => {
   if (!currentRow.value) return;
 
   editForm.projectName = currentRow.value.project_name?.name ?? "";
+  editForm.assignedAgency = currentRow.value.assigned_agency ?? "";
   editForm.responsiblePerson = currentRow.value.responsible_person_name ?? "";
   editForm.period = currentRow.value.period ?? null;
   editForm.status = currentRow.value.status ?? null;
 });
+
+const formRef = ref<FormInst | null>(null);
 
 const onPeriodUpdate = () => {
   formRef.value?.restoreValidation();
 };
 
 const rules = {
-  projectName: {
-    required: true,
-    message: "กรุณากรอกชื่อแผนงาน",
-    trigger: ["input", "blur"]
-  },
-  responsiblePerson: {
-    required: true,
-    message: "กรุณากรอกชื่อผู้รับผิดชอบ",
-    trigger: ["input", "blur"]
-  },
+  projectName: { required: true, message: "กรุณากรอกชื่อแผนงาน", trigger: ["input", "blur"] },
+  assignedAgency: { required: true, message: "กรุณากรอกผู้มอบหมาย/หน่วยงาน", trigger: ["input", "blur"] },
+  responsiblePerson: { required: true, message: "กรุณากรอกชื่อผู้รับผิดชอบ", trigger: ["input", "blur"] },
   period: {
     trigger: ["change", "blur", "input"],
     validator: (_rule: FormItemRule, value: any) => {
@@ -148,19 +146,12 @@ const rules = {
         value.length === 2 &&
         typeof value[0] === "number" &&
         typeof value[1] === "number";
-
       if (!ok) return new Error("กรุณาเลือกช่วงเวลา");
       return true;
     }
   },
-  status: {
-    required: true,
-    message: "กรุณาเลือกสถานะ",
-    trigger: ["change", "blur"]
-  }
+  status: { required: true, message: "กรุณาเลือกสถานะ", trigger: ["change", "blur"] }
 };
-
-const formRef = ref<FormInst | null>(null);
 
 const handleEdit = async () => {
   if (!currentRow.value) return;
@@ -170,26 +161,23 @@ const handleEdit = async () => {
 
     dialog.warning({
       title: "Confirm",
-      content: "ยืนยันการแก้ไขข้อมูลหรือไม่?",
+      content: `ยืนยันการแก้ไขข้อมูลหรือไม่? (${deptKey.value.toUpperCase()})`,
       positiveText: "Confirm",
       negativeText: "Cancel",
       onPositiveClick: () => {
-        dataStore.updateRow(idNumber.value, {
+        activeStore.value.updateRow(idNumber.value, {
           project_name: { name: editForm.projectName },
+          assigned_agency: editForm.assignedAgency,
           responsible_person_name: editForm.responsiblePerson,
           period: editForm.period,
           status: editForm.status as Status
         });
 
         message.success("แก้ไขข้อมูลสำเร็จ");
-        router.push({ name: "Board" });
-      },
-      onNegativeClick: () => {
-        message.info("ยกเลิกการแก้ไข");
+        router.push({ name: from.value });
       }
     });
-  } catch (errors) {
-    // errors จะเป็น array ของ validation error
+  } catch {
     dialog.error({
       title: "Error",
       content: "กรุณากรอกข้อมูลให้ครบ",
@@ -198,9 +186,8 @@ const handleEdit = async () => {
   }
 };
 
-
 const handleCancel = () => {
-  router.push({ name: "Board" }); // <-- ถ้าหน้าตารางชื่ออื่น เปลี่ยนตรงนี้
+  router.push({ name: from.value });
 };
 </script>
 

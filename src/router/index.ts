@@ -5,10 +5,14 @@ import BlankLayout from "@/app-layout/Blank/index.vue";
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-    // ✅ เข้าเว็บปุ๊บ ไป login ก่อน
+    // --------------------
+    // DEFAULT
+    // --------------------
     { path: "/", redirect: "/login" },
 
-    // 🔹 Layout เปล่า (Login / Register)
+    // --------------------
+    // AUTH (NO SIDEBAR)
+    // --------------------
     {
       path: "/login",
       component: BlankLayout,
@@ -16,9 +20,9 @@ const router = createRouter({
         {
           path: "",
           name: "Login",
-          component: () => import("@/views/LoginPage.vue"),
-        },
-      ],
+          component: () => import("@/views/LoginPage.vue")
+        }
+      ]
     },
     {
       path: "/register",
@@ -27,28 +31,41 @@ const router = createRouter({
         {
           path: "",
           name: "Register",
-          component: () => import("@/views/RegisPage.vue"),
-        },
-      ],
+          component: () => import("@/views/RegisPage.vue")
+        }
+      ]
     },
 
-    // 🔹 Layout หลัก (มี sidebar)
-    {
-      path: "/app",
-      component: MainContainer,
-      children: [
-        { path: "", redirect: "/app/dashboard" },
-        { path: "dashboard", name: "Dashboard", component: () => import("@/views/Dashboard.vue") },
-        { path: "board", name: "Board", component: () => import("@/views/BoardPage.vue") },
-        { path: "add", name: "AddData", component: () => import("@/views/AddDataPage.vue") },
-        { path: "edit/:id", name: "Edit", component: () => import("@/views/EditPage.vue"), props: true },
-        { path: "profile", name: "Profile", component: () => import("@/views/ProfilePage.vue") },
-      ],
-    },
+    // --------------------
+    // MAIN APP (WITH SIDEBAR)
+    // --------------------
+{
+  path: "/app",
+  component: MainContainer,
+  children: [
+    { path: "", redirect: { name: "Dashboard" } },
 
-    // (option) not found
-    { path: "/:pathMatch(.*)*", redirect: "/login" },
+    { path: "dashboard", name: "Dashboard", component: () => import("@/views/Dashboard.vue") },
+
+    // ✅ ทำ path รวมสำหรับ boards + redirect เข้า HR
+    { path: "boards", redirect: { name: "HrBoard" } },
+
+    { path: "boards/hr", name: "HrBoard", component: () => import("@/views/HumanResource/HrBoardPage.vue") },
+    { path: "boards/iot", name: "IotBoard", component: () => import("@/views/IOT/IotBoardPage.vue") },
+
+    { path: "add", name: "AddData", component: () => import("@/views/AddDataPage.vue") },
+    { path: "edit/:id", name: "Edit", component: () => import("@/views/EditPage.vue"), props: true },
+
+    { path: "profile", name: "Profile", component: () => import("@/views/ProfilePage.vue") },
   ],
+},
+
+
+    // --------------------
+    // NOT FOUND
+    // --------------------
+    { path: "/:pathMatch(.*)*", redirect: "/login" }
+  ]
 });
 
 export default router;

@@ -1,3 +1,4 @@
+// src/app-layout/MenuBar/items.ts
 import type { MenuOption } from "naive-ui";
 import { h } from "vue";
 import { RouterLink } from "vue-router";
@@ -17,17 +18,34 @@ export function getMenuItems(): MenuOption[] {
           { default: () => "Dashboard" }
         ),
       key: "Dashboard",
-      icon: renderIcon("material-symbols:dashboard-outline"),
+      icon: renderIcon("material-symbols:dashboard-outline")
     },
+
+    // ✅ Expand Submenu: Scrum Board
     {
-      label: () =>
-        h(
-          RouterLink,
-          { to: { name: "Board" } },
-          { default: () => "Scrum Board" }
-        ),
-      key: "Board",
+      label: "Scrum Board",
+      key: "ScrumBoard", // key ของ "พ่อ" ไม่จำเป็นต้องเป็น route name
       icon: renderIcon("material-symbols:view-list-outline"),
+      children: [
+        {
+          label: () =>
+            h(
+              RouterLink,
+              { to: { name: "HrBoard" } },
+              { default: () => "แผนก Human Resource" }
+            ),
+          key: "HrBoard"
+        },
+        {
+          label: () =>
+            h(
+              RouterLink,
+              { to: { name: "IotBoard" } },
+              { default: () => "แผนก IOT" }
+            ),
+          key: "IotBoard"
+        }
+      ]
     }
   ];
 }

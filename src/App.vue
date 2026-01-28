@@ -1,15 +1,3 @@
-<template>
-  <n-config-provider>
-    <n-notification-provider>
-      <n-dialog-provider>
-        <n-message-provider>
-          <router-view />
-        </n-message-provider>
-      </n-dialog-provider>
-    </n-notification-provider>
-  </n-config-provider>
-</template>
-
 <script setup lang="ts">
 import {
   NConfigProvider,
@@ -27,4 +15,14 @@ onMounted(() => {
 });
 </script>
 
-
+<template>
+  <n-config-provider>
+    <n-notification-provider>
+      <n-dialog-provider>
+        <n-message-provider>
+          <router-view />
+        </n-message-provider>
+      </n-dialog-provider>
+    </n-notification-provider>
+  </n-config-provider>
+</template>

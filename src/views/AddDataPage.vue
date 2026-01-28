@@ -1,64 +1,71 @@
 <template>
   <div class="bg-white min-h-screen w-full p-6">
     <div class="max-w-5xl mx-auto">
-        <!-- แถวหัวข้อ + ปุ่ม -->
-		 <n-card size="huge" hoverable class="w-full max-w-screen-xl mx-auto">
-			<div class="flex items-center justify-between">
-			<h3 class="text-xl font-semibold">เพิ่มข้อมูลงาน</h3>
-			<div class="flex gap-3">
-				<n-button class="bg-white border border-black text-black" @click="handleCancel" size="large">
-				ยกเลิก
-				</n-button>
-				<n-button type="success" size="large" @click="handleSubmit">
-				บันทึก
-				</n-button>
-			</div>
-			</div>
+      <n-card size="huge" hoverable class="w-full max-w-screen-xl mx-auto">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xl font-semibold">เพิ่มข้อมูลงาน</h3>
 
-			<!-- เส้นคั่นดำ -->
-			<n-divider />
+          <div class="flex gap-3">
+            <n-button
+              class="bg-white border border-black text-black"
+              @click="handleCancel"
+              size="large"
+            >
+              ยกเลิก
+            </n-button>
 
-			<!-- ฟอร์ม 5 ช่อง -->
-			<n-form
-			ref="formRef"
-			:model="formValue"
-			:rules="rules"
-			label-placement="top"
-			:show-feedback="true"
-			@submit.prevent="handleSubmit"
-			>
-			<n-form-item label="ชื่อแผนงาน" path="project_name">
-				<n-input v-model:value="formValue.project_name" size="large" class="w-full" />
-			</n-form-item>
+            <n-button type="success" size="large" @click="handleSubmit">
+              บันทึก
+            </n-button>
+          </div>
+        </div>
 
-			<n-form-item label="หน่วยงาน" path="assigned_agency">
-				<n-input v-model:value="formValue.assigned_agency" size="large" class="w-full" />
-			</n-form-item>
+        <n-divider />
 
-			<n-form-item label="ผู้รับผิดชอบ" path="responsible_person_name">
-				<n-input v-model:value="formValue.responsible_person_name" size="large" class="w-full" />
-			</n-form-item>
+        <n-form
+          ref="formRef"
+          :model="formValue"
+          :rules="rules"
+          label-placement="top"
+          :show-feedback="true"
+          @submit.prevent="handleSubmit"
+        >
+          <n-form-item label="ชื่อแผนงาน" path="project_name">
+            <n-input v-model:value="formValue.project_name" size="large" class="w-full" />
+          </n-form-item>
 
-			<n-form-item label="ระยะเวลา" path="period">
-				<n-date-picker
-				v-model:value="formValue.period"
-				type="daterange"
-				size="large"
-				class="w-full"
-				/>
-			</n-form-item>
+          <n-form-item label="หน่วยงาน" path="assigned_agency">
+            <n-input v-model:value="formValue.assigned_agency" size="large" class="w-full" />
+          </n-form-item>
 
-			<n-form-item label="สถานะงาน" path="status">
-				<n-select
-				v-model:value="formValue.status"
-				:options="statusOptions"
-				size="large"
-				class="w-full"
-				placeholder=""
-				/>
-			</n-form-item>
-			</n-form>
-		</n-card>
+          <n-form-item label="ผู้รับผิดชอบ" path="responsible_person_name">
+            <n-input
+              v-model:value="formValue.responsible_person_name"
+              size="large"
+              class="w-full"
+            />
+          </n-form-item>
+
+          <n-form-item label="ระยะเวลา" path="period">
+            <n-date-picker
+              v-model:value="formValue.period"
+              type="daterange"
+              size="large"
+              class="w-full"
+            />
+          </n-form-item>
+
+          <n-form-item label="สถานะงาน" path="status">
+            <n-select
+              v-model:value="formValue.status"
+              :options="statusOptions"
+              size="large"
+              class="w-full"
+              placeholder=""
+            />
+          </n-form-item>
+        </n-form>
+      </n-card>
     </div>
   </div>
 </template>
@@ -78,9 +85,9 @@ import {
   useMessage
 } from "naive-ui";
 import type { FormInst, FormRules } from "naive-ui";
-import { useDataStore } from "../stores/data";
 
-type Status = "todo" | "in_progress" | "done";
+import { useDeptStore } from "@/stores/departmentStore";
+import type { Status } from "@/stores/types";
 
 interface AddDataForm {
   project_name: string;
@@ -92,7 +99,8 @@ interface AddDataForm {
 
 const router = useRouter();
 const message = useMessage();
-const dataStore = useDataStore();
+
+const { from, deptKey, activeStore } = useDeptStore();
 
 const formValue = reactive<AddDataForm>({
   project_name: "",
@@ -114,49 +122,51 @@ const rules: FormRules = {
   project_name: [{ required: true, message: "กรุณากรอกชื่อแผนงาน", trigger: ["input", "blur"] }],
   assigned_agency: [{ required: true, message: "กรุณากรอกหน่วยงาน", trigger: ["input", "blur"] }],
   responsible_person_name: [{ required: true, message: "กรุณากรอกผู้รับผิดชอบ", trigger: ["input", "blur"] }],
-    period: [{ type: "array", required: true, trigger: ["change"],
-				validator: (_rule, value: [number, number] | null) => {
-					if (!value || !Array.isArray(value) || value.length !== 2 || !value[0] || !value[1]) {
-					return new Error("กรุณาเลือกช่วงระยะเวลา");
-					}
-					return true;
-				}
-			}],
+  period: [
+    {
+      type: "array",
+      required: true,
+      trigger: ["change", "blur"],
+      validator: (_rule, value: [number, number] | null) => {
+        const ok =
+          Array.isArray(value) &&
+          value.length === 2 &&
+          typeof value[0] === "number" &&
+          typeof value[1] === "number";
+
+        if (!ok) return new Error("กรุณาเลือกช่วงระยะเวลา");
+        return true;
+      }
+    }
+  ],
   status: [{ required: true, message: "กรุณาเลือกสถานะงาน", trigger: ["change", "blur"] }]
 };
 
 const handleCancel = () => {
-  router.back();
+  router.push({ name: from.value });
 };
 
 const handleSubmit = async () => {
   try {
     await formRef.value?.validate();
-    // TODO: ส่งข้อมูลไป API ที่นี่
-	dataStore.addRow({
+
+    activeStore.value.addRow({
       project_name: { name: formValue.project_name },
       assigned_agency: formValue.assigned_agency,
       responsible_person_name: formValue.responsible_person_name,
       period: formValue.period,
       status: formValue.status!
     });
-	Object.assign(formValue, {
-      project_name: "",
-      assigned_agency: "",
-      responsible_person_name: "",
-      period: null,
-      status: null
-    });
-    message.success("บันทึกสำเร็จ");
-    router.back();
+
+    message.success(`บันทึกสำเร็จ (${deptKey.value.toUpperCase()})`);
+    router.push({ name: from.value });
   } catch {
-    // ไม่ต้องทำอะไร เพิ่มเติมเมื่อ validate ไม่ผ่าน
+    // validate ไม่ผ่าน -> Naive แสดง error แล้ว
   }
 };
 </script>
 
 <style scoped>
-/* ให้ตัวหนังสือใน Naive Input/Placeholder ชิดซ้าย */
 :deep(.n-input__input-el),
 :deep(.n-input__placeholder) {
   text-align: left;

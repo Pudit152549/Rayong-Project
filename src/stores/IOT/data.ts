@@ -1,22 +1,12 @@
 import { defineStore } from "pinia";
+import type { RowData, Status } from "@/stores/types";
 
-export type Status = "todo" | "in_progress" | "done";
-
-export interface RowData {
-  id: number;
-  project_name: { name: string };
-  assigned_agency: string;
-  responsible_person_name: string;
-  period: [number, number] | null;
-  status: Status;
-}
-
-export const useDataStore = defineStore("data", {
+export const useIotDataStore = defineStore("iotData", {
   state: () => ({
     rows: [
-      {
+    {
         id: 1,
-        project_name: { name: "ยกระดับคุณภาพการศึกษาเชิงรุก" },
+        project_name: { name: "แผงวงจรประตูอัตโนมัติ" },
         assigned_agency: "สำนักงานการศึกษาขั้นพื้นฐาน",
         responsible_person_name: "สมชาย ใจดี",
         period: [1758906000000, 1759165200000],
@@ -31,64 +21,34 @@ export const useDataStore = defineStore("data", {
         status: "todo" as Status
       }
     ] as RowData[],
-
     searchKeyword: "",
     agencyFilter: null as string | null,
     statusFilter: null as Status | null
   }),
-
   getters: {
     filteredRows(state): RowData[] {
       return state.rows.filter((row) => {
         const matchKeyword =
           !state.searchKeyword ||
-          row.project_name.name
-            .toLowerCase()
-            .includes(state.searchKeyword.toLowerCase());
-
-        const matchAgency =
-          !state.agencyFilter || row.assigned_agency === state.agencyFilter;
-
-        const matchStatus =
-          !state.statusFilter || row.status === state.statusFilter;
-
+          row.project_name.name.toLowerCase().includes(state.searchKeyword.toLowerCase());
+        const matchAgency = !state.agencyFilter || row.assigned_agency === state.agencyFilter;
+        const matchStatus = !state.statusFilter || row.status === state.statusFilter;
         return matchKeyword && matchAgency && matchStatus;
       });
     }
   },
-
   actions: {
-    /** เพิ่มข้อมูลจากหน้า AddDataPage */
-    addRow(payload: {
-      project_name: { name: string };
-      assigned_agency: string;
-      responsible_person_name: string;
-      period: [number, number] | null;
-      status: Status;
-    }) {
+    addRow(payload: Omit<RowData, "id">) {
       const maxId = this.rows.reduce((m, r) => Math.max(m, r.id), 0);
-
-      this.rows.push({
-        id: maxId + 1,
-        project_name: payload.project_name,
-        assigned_agency: payload.assigned_agency,
-        responsible_person_name: payload.responsible_person_name,
-        period: payload.period,
-        status: payload.status
-      });
+      this.rows.push({ id: maxId + 1, ...payload });
     },
-
     updateRow(id: number, partial: Partial<RowData>) {
       const idx = this.rows.findIndex((r) => r.id === id);
-      if (idx !== -1) {
-        this.rows[idx] = { ...this.rows[idx], ...partial };
-      }
+      if (idx !== -1) this.rows[idx] = { ...this.rows[idx], ...partial };
     },
-
     deleteRow(id: number) {
       this.rows = this.rows.filter((r) => r.id !== id);
     },
-
     clearFilters() {
       this.searchKeyword = "";
       this.agencyFilter = null;

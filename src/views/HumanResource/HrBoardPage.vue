@@ -1,9 +1,12 @@
 <template>
   <div class="p-6 w-full">
-    <div class="text-center">
+    <div class="text-center mb-6">
       <h2 class="gradient-text text-2xl font-bold mb-2">
         ระบบติดตามความคืบหน้างาน (Scrum Board)
       </h2>
+      <div class="text-lg font-bold text-[#111827]">
+        ฝ่ายแผนก {{ Department }}
+      </div>
     </div>
 
     <n-card size="huge" hoverable class="w-full max-w-screen-xl mx-auto">
@@ -166,9 +169,9 @@
 
 <script setup lang="ts">
 import { h, reactive, ref, onMounted, onBeforeUnmount, computed } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 // import { useUserStore } from "../stores/user";
-import { useDataStore } from "../stores/data";
+import { useHrDataStore } from "@/stores/HumanResource/data";
 import {
   NButton, 
   NDivider, 
@@ -187,12 +190,15 @@ import {
   type DataTableColumns
 } from "naive-ui";
 import { EyeOutline, CreateOutline, TrashOutline } from "@vicons/ionicons5";
-import type { RowData, Status } from "../stores/data";
+import type { RowData, Status } from "@/stores/types";
 import { Icon } from "@iconify/vue"
 
 const router = useRouter();
+const route = useRoute();
 // const userStore = useUserStore();
-const dataStore = useDataStore();
+const dataStore = useHrDataStore();
+
+const Department = "Human Resource";
 
 const statusOptions = [
   { label: "To Do", value: "todo" },
@@ -277,7 +283,14 @@ const renderActions = (row: RowData) =>
     ),
     h(
       NButton,
-      { circle: true, tertiary: true, type: "warning", size: "small", onClick: () => router.push({ name: "Edit", params: { id: row.id } }) },
+      { circle: true, tertiary: true, type: "warning", size: "small", 
+      onClick: () =>
+        router.push({
+          name: "Edit",
+          params: { id: row.id },
+          query: { from: "HrBoard", deptKey: "hr" }
+        })
+      },
       { icon: () => renderIcon(CreateOutline) }
     ),
     h(
@@ -334,7 +347,7 @@ const columns: DataTableColumns<RowData> = [
 ];
 
 const addData = () => {
-  router.push({ name: "AddData" });
+  router.push({ name: "AddData", query: { from: "HrBoard", deptKey: "hr" } });
 };
 </script>
 

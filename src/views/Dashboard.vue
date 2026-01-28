@@ -1,9 +1,8 @@
 <template>
   <div class="bg-gray-100 min-h-screen p-6">
     <div class="max-w-screen-xl mx-auto space-y-6">
-      <h2 class="text-2xl font-bold gradient-text text-center">
-        Dashboard
-      </h2>
+      <h2 class="text-2xl font-bold gradient-text text-center">Dashboard</h2>
+
       <n-card size="huge" hoverable class="w-full max-w-screen-xl mx-auto">
         <!-- Summary Cards -->
         <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-5">
@@ -32,11 +31,7 @@
         <div class="my-6">
           <n-card class="shadow-md py-3">
             <p class="mb-2 font-semibold">ความคืบหน้าโดยรวม</p>
-            <n-progress
-              type="line"
-              :percentage="progressPercent"
-              status="success"
-            />
+            <n-progress type="line" :percentage="progressPercent" status="success" />
           </n-card>
         </div>
 
@@ -60,7 +55,6 @@
 
 <script setup lang="ts">
 import { computed, h } from "vue";
-import { useDataStore, type RowData, type Status } from "../stores/data";
 import {
   NCard,
   NProgress,
@@ -69,57 +63,82 @@ import {
   type DataTableColumns
 } from "naive-ui";
 
-const dataStore = useDataStore();
+import { useHrDataStore } from "@/stores/HumanResource/data";
+import { useIotDataStore } from "@/stores/IOT/data";
+import type { RowData, Status } from "@/stores/types";
 
-const total = computed(() => dataStore.rows.length);
-const todoCount = computed(() =>
-  dataStore.rows.filter(r => r.status === "todo").length
-);
+// ✅ store แยก domain
+const hrStore = useHrDataStore();
+const iotStore = useIotDataStore();
+
+// ✅ สร้างชนิดข้อมูลสำหรับหน้า dashboard (เพิ่ม department เฉพาะหน้า)
+type DashboardRow = RowData & {
+  department: "Human Resource" | "IOT";
+};
+
+// ✅ รวมข้อมูลทุกแผนก แล้วเติม department
+const allRows = computed<DashboardRow[]>(() => [
+  ...hrStore.rows.map((r) => ({ ...r, department: "Human Resource" as const })),
+  ...iotStore.rows.map((r) => ({ ...r, department: "IOT" as const }))
+]);
+
+const total = computed(() => allRows.value.length);
+
+const todoCount = computed(() => allRows.value.filter((r) => r.status === "todo").length);
 const inProgressCount = computed(() =>
-  dataStore.rows.filter(r => r.status === "in_progress").length
+  allRows.value.filter((r) => r.status === "in_progress").length
 );
-const doneCount = computed(() =>
-  dataStore.rows.filter(r => r.status === "done").length
-);
+const doneCount = computed(() => allRows.value.filter((r) => r.status === "done").length);
 
 const progressPercent = computed(() => {
   if (total.value === 0) return 0;
   return Math.round((doneCount.value / total.value) * 100);
 });
 
-const recentRows = computed(() =>
-  [...dataStore.rows].slice(-5).reverse()
-);
+// ✅ งานล่าสุด (รวมทุกแผนก) — เรียงตาม id ล่าสุดก่อน
+// หมายเหตุ: ตอนนี้ id แยก store -> อาจชนกันได้ (เช่น hr มี id=3, iot ก็มี id=3)
+// ถ้าอยาก “ล่าสุดจริง” แนะนำให้มี createdAt ใน RowData ในอนาคต
+const recentRows = computed(() => {
+  return [...allRows.value]
+    .sort((a, b) => b.id - a.id)
+    .slice(0, 5);
+});
 
-const rowKey = (row: RowData) => row.id;
+const rowKey = (row: DashboardRow) => `${row.department}-${row.id}`;
 
 const statusLabelMap: Record<Status, string> = {
   todo: "To Do",
   in_progress: "In Progress",
   done: "Done"
 };
+
 const statusTypeMap: Record<Status, "error" | "warning" | "success"> = {
   todo: "error",
   in_progress: "warning",
   done: "success"
 };
 
-const columns: DataTableColumns<RowData> = [
+const columns: DataTableColumns<DashboardRow> = [
   {
     title: "แผนงาน",
     key: "project",
-    render: row => row.project_name.name
+    render: (row) => row.project_name.name
   },
   {
     title: "ผู้รับผิดชอบ",
     key: "owner",
-    render: row => row.responsible_person_name
+    render: (row) => row.responsible_person_name
+  },
+  {
+    title: "แผนกที่รับผิดชอบ",
+    key: "department",
+    render: (row) => row.department
   },
   {
     title: "สถานะ",
     key: "status",
     align: "center",
-    render: row =>
+    render: (row) =>
       h(
         NTag,
         { type: statusTypeMap[row.status], round: true },

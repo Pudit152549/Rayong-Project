@@ -47,8 +47,15 @@ watch(
 
 const handleSelect = (key: string) => {
   selectedKey.value = key;
-  router.push({ name: key });
-  emit("navigate"); // ✅ ถ้าอยู่ใน Drawer จะปิด
+
+  // ✅ ถ้า key เป็น route name จริง ค่อย push
+  const resolved = router.resolve({ name: key });
+  if (resolved.matched.length > 0) {
+    router.push({ name: key });
+    emit("navigate");
+    return;
+  }
+
 };
 </script>
 
