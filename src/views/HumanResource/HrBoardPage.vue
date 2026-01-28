@@ -169,7 +169,7 @@
 
 <script setup lang="ts">
 import { h, reactive, ref, onMounted, onBeforeUnmount, computed } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { useRouter } from "vue-router";
 // import { useUserStore } from "../stores/user";
 import { useHrDataStore } from "@/stores/HumanResource/data";
 import {
@@ -194,7 +194,6 @@ import type { RowData, Status } from "@/stores/types";
 import { Icon } from "@iconify/vue"
 
 const router = useRouter();
-const route = useRoute();
 // const userStore = useUserStore();
 const dataStore = useHrDataStore();
 

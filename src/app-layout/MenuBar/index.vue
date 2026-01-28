@@ -5,7 +5,8 @@
   >
     <n-menu
       :options="menuOptions"
-      :collapsed="collapsed"
+      :style="{ width: props.collapsed ? `${collapsedWidth}px` : `${expandedWidth}px` }"
+      :collapsed="props.collapsed"
       :collapsed-width="collapsedWidth"
       :collapsed-icon-size="22"
       :indent="18"
