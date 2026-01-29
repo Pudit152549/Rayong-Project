@@ -19,17 +19,26 @@
           </template>
         </n-button>
       </div>
-        <div class="font-bold text-sm md:text-base md:sticky md:top-0">
+        <div class="font-bold text-sm md:text-md md:sticky md:top-0 px-2">
           การออกแบบและพัฒนาระบบติดตามความคืบหน้างาน
         </div>
       </div>
-      <div class="ml-auto flex items-center gap-2 md:gap-3">
+      <div class="ml-auto flex items-center gap-2 md:gap-5">
         <n-button text @click="goProfile">
-          <template #icon><n-icon><Icon icon="mdi:account" /></n-icon></template>
+          <template #icon>
+            <Icon icon="mdi:account" />
+          </template>
           <span class="hidden sm:inline">โปรไฟล์</span>
         </n-button>
+        <n-button text>
+          <template #icon>
+            <Icon icon="mdi:bell" />
+          </template>
+        </n-button>
         <n-button type="error" ghost @click="logout">
-          <template #icon><n-icon><Icon icon="mdi:logout" /></n-icon></template>
+          <template #icon>
+            <Icon icon="mdi:logout" />
+          </template>
           <span class="hidden sm:inline">ออกจากระบบ</span>
         </n-button>
       </div>

@@ -1,7 +1,9 @@
 <template>
   <div class="bg-gray-100 min-h-screen p-6">
     <div class="max-w-screen-xl mx-auto space-y-6">
-      <h2 class="text-2xl font-bold gradient-text text-center">Dashboard</h2>
+      <div class="text-center mb-6 bg-white p-6 rounded-md shadow-md w-full max-w-screen-xl mx-auto">
+        <h2 class="text-2xl font-bold gradient-text text-center">Dashboard</h2>
+      </div>
 
       <n-card size="huge" hoverable class="w-full max-w-screen-xl mx-auto">
         <!-- Summary Cards -->
@@ -36,18 +38,20 @@
         </div>
 
         <!-- Recent Tasks -->
-        <n-card class="shadow-md py-3">
-          <p class="font-semibold mb-3">งานล่าสุด</p>
-          <div class="w-full overflow-x-auto">
-            <n-data-table
-              :columns="columns"
-              :data="recentRows"
-              :row-key="rowKey"
-              size="small"
-              bordered
-            />
-          </div>
-        </n-card>
+        <div class="w-full overflow-x-auto">
+          <n-card class="shadow-md py-3">
+            <p class="font-semibold mb-3">งานล่าสุด</p>
+            <div class="w-full overflow-x-auto">
+              <n-data-table
+                :columns="columns"
+                :data="recentRows"
+                :row-key="rowKey"
+                size="small"
+                bordered
+              />
+            </div>
+          </n-card>
+        </div>
       </n-card>
     </div>
   </div>
@@ -122,21 +126,25 @@ const columns: DataTableColumns<DashboardRow> = [
   {
     title: "แผนงาน",
     key: "project",
+    minWidth: 220,
     render: (row) => row.project_name.name
   },
   {
     title: "ผู้รับผิดชอบ",
     key: "owner",
+    minWidth: 120,
     render: (row) => row.responsible_person_name
   },
   {
     title: "แผนกที่รับผิดชอบ",
     key: "department",
+    minWidth: 220,
     render: (row) => row.department
   },
   {
     title: "สถานะ",
     key: "status",
+    width: 160,
     align: "center",
     render: (row) =>
       h(

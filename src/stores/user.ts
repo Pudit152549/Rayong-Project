@@ -1,19 +1,36 @@
+// src/stores/user.ts
 import { defineStore } from "pinia";
 
 export interface RegisteredUser {
   email: string;
-  password: string; // (mock) เก็บ plain text ก่อนนะ ไว้ต่อ API ค่อยเปลี่ยน
+  password: string;
+
+  username: string;          // ✅ เพิ่ม
+  avatarUrl?: string;        // ✅ เพิ่ม (base64 หรือ url)
+
   firstname: string;
   lastname: string;
+
+  position: string;          // ✅ เพิ่ม
+  department: string;        // ✅ เพิ่ม
+
   age?: number | null;
   gender?: string;
 }
 
 export interface UserProfile {
   email: string;
+
+  username: string;          // ✅ เพิ่ม
+  avatarUrl: string;         // ✅ เพิ่ม
+
   fullName: string;
   firstname: string;
   lastname: string;
+
+  position: string;          // ✅ เพิ่ม
+  department: string;        // ✅ เพิ่ม
+
   age: number | null;
   gender: string;
 }
@@ -48,16 +65,17 @@ function clearSessionEmail() {
 
 export const useUserStore = defineStore("user", {
   state: () => ({
-    // ✅ รายชื่อผู้สมัคร (เก็บไว้ mock ก่อน)
     users: loadUsers() as RegisteredUser[],
-
-    // ✅ สถานะล็อกอิน + current user
     isLoggedIn: false,
     profile: {
       email: "",
+      username: "",
+      avatarUrl: "",
       fullName: "",
       firstname: "",
       lastname: "",
+      position: "",
+      department: "",
       age: null,
       gender: ""
     } as UserProfile
@@ -79,16 +97,20 @@ export const useUserStore = defineStore("user", {
       this.isLoggedIn = true;
       this.profile = {
         email: u.email,
+        username: u.username || u.email.split("@")[0],
+        avatarUrl: u.avatarUrl ?? "",
         fullName: `${u.firstname} ${u.lastname}`.trim(),
         firstname: u.firstname,
         lastname: u.lastname,
+        position: u.position ?? "",
+        department: u.department ?? "",
         age: u.age ?? null,
         gender: u.gender ?? ""
       };
     },
 
     /** ✅ สมัครสมาชิก (Register) */
-    register(payload: RegisteredUser) {
+    register(payload: Omit<RegisteredUser, "email"> & { email: string }) {
       const email = payload.email.trim().toLowerCase();
 
       const exists = this.users.some((u) => u.email.toLowerCase() === email);
@@ -96,9 +118,16 @@ export const useUserStore = defineStore("user", {
         return { ok: false, message: "อีเมลนี้ถูกใช้งานแล้ว" } as const;
       }
 
+      // ✅ กันข้อมูลกรอกว่าง: username fallback
+      const username = payload.username?.trim() || email.split("@")[0];
+
       const user: RegisteredUser = {
         ...payload,
-        email
+        email,
+        username,
+        avatarUrl: payload.avatarUrl ?? "",
+        position: payload.position ?? "",
+        department: payload.department ?? ""
       };
 
       this.users.push(user);
@@ -117,22 +146,25 @@ export const useUserStore = defineStore("user", {
       );
 
       if (!u) {
-        this.logout(); // เคลียร์ state ให้ชัวร์
+        this.logout();
         return { ok: false, message: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" } as const;
       }
 
       this.isLoggedIn = true;
       this.profile = {
         email: u.email,
+        username: u.username || u.email.split("@")[0],
+        avatarUrl: u.avatarUrl ?? "",
         fullName: `${u.firstname} ${u.lastname}`.trim(),
         firstname: u.firstname,
         lastname: u.lastname,
+        position: u.position ?? "",
+        department: u.department ?? "",
         age: u.age ?? null,
         gender: u.gender ?? ""
       };
 
       saveSessionEmail(u.email);
-
       return { ok: true } as const;
     },
 
@@ -140,23 +172,40 @@ export const useUserStore = defineStore("user", {
       this.isLoggedIn = false;
       this.profile = {
         email: "",
+        username: "",
+        avatarUrl: "",
         fullName: "",
         firstname: "",
         lastname: "",
+        position: "",
+        department: "",
         age: null,
         gender: ""
       };
       clearSessionEmail();
     },
 
-    /** (optional) อัปเดตโปรไฟล์ current user + sync ลง users */
-    updateProfile(update: { firstname: string; lastname: string; age: number | null; gender: string }) {
+    /** ✅ อัปเดตโปรไฟล์ current user + sync ลง users */
+    updateProfile(update: {
+      username: string;
+      avatarUrl: string;
+      firstname: string;
+      lastname: string;
+      position: string;     // ✅ เพิ่ม
+      department: string;   // ✅ เพิ่ม
+      age: number | null;
+      gender: string;
+    }) {
       if (!this.isLoggedIn || !this.profile.email) return;
 
       // update state profile
+      this.profile.username = update.username;
+      this.profile.avatarUrl = update.avatarUrl;
       this.profile.firstname = update.firstname;
       this.profile.lastname = update.lastname;
       this.profile.fullName = `${update.firstname} ${update.lastname}`.trim();
+      this.profile.position = update.position;
+      this.profile.department = update.department;
       this.profile.age = update.age;
       this.profile.gender = update.gender;
 
@@ -165,8 +214,12 @@ export const useUserStore = defineStore("user", {
       if (idx !== -1) {
         this.users[idx] = {
           ...this.users[idx],
+          username: update.username,
+          avatarUrl: update.avatarUrl,
           firstname: update.firstname,
           lastname: update.lastname,
+          position: update.position,
+          department: update.department,
           age: update.age,
           gender: update.gender
         };

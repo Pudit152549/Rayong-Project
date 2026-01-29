@@ -9,31 +9,34 @@
           ref="formRef"
           :model="form"
           :rules="rules"
+          label-placement="top"
           @submit.prevent="handleRegister"
         >
           <n-form-item path="firstname" label="Firstname:" class="mb-2">
-            <n-input
-              v-model:value="form.firstname"
-              placeholder="Firstname"
-              class="w-full mt-1"
-            />
+            <n-input v-model:value="form.firstname" placeholder="Firstname" class="w-full mt-1" />
           </n-form-item>
 
           <n-form-item path="lastname" label="Lastname:" class="mb-2">
-            <n-input
-              v-model:value="form.lastname"
-              placeholder="Lastname"
-              class="w-full mt-1"
-            />
+            <n-input v-model:value="form.lastname" placeholder="Lastname" class="w-full mt-1" />
+          </n-form-item>
+
+          <!-- ✅ เพิ่ม Username -->
+          <n-form-item path="username" label="Username:" class="mb-2">
+            <n-input v-model:value="form.username" placeholder="Username" class="w-full mt-1" />
+          </n-form-item>
+
+          <!-- ✅ เพิ่ม Position -->
+          <n-form-item path="position" label="ตำแหน่ง:" class="mb-2">
+            <n-input v-model:value="form.position" placeholder="ตำแหน่ง" class="w-full mt-1" />
+          </n-form-item>
+
+          <!-- ✅ เพิ่ม Department -->
+          <n-form-item path="department" label="หน่วยงาน:" class="mb-2">
+            <n-input v-model:value="form.department" placeholder="หน่วยงาน" class="w-full mt-1" />
           </n-form-item>
 
           <n-form-item path="email" label="Email:" class="mb-2">
-            <n-input
-              v-model:value="form.email"
-              type="text"
-              placeholder="Email"
-              class="w-full mt-1"
-            />
+            <n-input v-model:value="form.email" type="text" placeholder="Email" class="w-full mt-1" />
           </n-form-item>
 
           <n-form-item path="password" label="Password:" class="mb-2">
@@ -56,14 +59,14 @@
             />
           </n-form-item>
 
-          <n-button type="primary" attr-type="submit" class="mt-2">
+          <n-button type="primary" attr-type="submit" class="mt-2 w-full">
             Register
           </n-button>
 
           <n-divider />
 
           <router-link to="/" class="text-blue-500 mt-4 block">
-            <n-button strong secondary round type="info">
+            <n-button strong secondary round type="info" class="w-full">
               Already have an account? Login
             </n-button>
           </router-link>
@@ -74,9 +77,18 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, computed } from "vue";
+import { reactive, ref, computed, watch } from "vue";
 import { useRouter } from "vue-router";
-import { NButton, NDivider, NInput, NCard, NForm, NFormItem, useNotification, useDialog } from "naive-ui";
+import {
+  NButton,
+  NDivider,
+  NInput,
+  NCard,
+  NForm,
+  NFormItem,
+  useNotification,
+  useDialog
+} from "naive-ui";
 import type { FormInst, FormRules, NotificationType } from "naive-ui";
 import { useUserStore } from "@/stores/user";
 
@@ -85,6 +97,9 @@ defineOptions({ name: "RegisPage" });
 interface RegisterForm {
   firstname: string;
   lastname: string;
+  username: string;
+  position: string;
+  department: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -98,7 +113,7 @@ const notification = useNotification();
 function notify(type: NotificationType, message: string, meta?: string) {
   notification[type]({
     content: message,
-    meta: meta,
+    meta,
     duration: 3500,
     keepAliveOnHover: true
   });
@@ -107,10 +122,23 @@ function notify(type: NotificationType, message: string, meta?: string) {
 const form = reactive<RegisterForm>({
   firstname: "",
   lastname: "",
+  username: "",
+  position: "",
+  department: "",
   email: "",
   password: "",
   confirmPassword: ""
 });
+
+// ✅ auto ตั้ง username จาก email (ถ้ายังไม่พิมพ์)
+watch(
+  () => form.email,
+  (val) => {
+    if (!form.username.trim() && val.includes("@")) {
+      form.username = val.split("@")[0];
+    }
+  }
+);
 
 const isPasswordMatch = computed(() => form.password === form.confirmPassword);
 const formRef = ref<FormInst | null>(null);
@@ -118,6 +146,9 @@ const formRef = ref<FormInst | null>(null);
 const rules: FormRules = {
   firstname: [{ required: true, message: "Please enter firstname", trigger: ["input", "blur"] }],
   lastname: [{ required: true, message: "Please enter lastname", trigger: ["input", "blur"] }],
+  username: [{ required: true, message: "Please enter username", trigger: ["input", "blur"] }],
+  position: [{ required: true, message: "Please enter position", trigger: ["input", "blur"] }],
+  department: [{ required: true, message: "Please enter department", trigger: ["input", "blur"] }],
   email: [{ required: true, message: "Please enter email", trigger: ["input", "blur"] }],
   password: [{ required: true, message: "Please enter password", trigger: ["input", "blur"] }],
   confirmPassword: [{ required: true, message: "Please confirm password", trigger: ["input", "blur"] }]
@@ -136,10 +167,17 @@ const handleRegister = async () => {
   }
 
   const res = userStore.register({
-    firstname: form.firstname,
-    lastname: form.lastname,
-    email: form.email,
+    firstname: form.firstname.trim(),
+    lastname: form.lastname.trim(),
+    email: form.email.trim(),
     password: form.password,
+
+    username: form.username.trim(),     // ✅ required by type
+    avatarUrl: "",                      // ✅ optional แต่ส่งไปเลย
+
+    position: form.position.trim(),     // ✅ เก็บใน store
+    department: form.department.trim(), // ✅ เก็บใน store
+
     age: null,
     gender: ""
   });
@@ -159,10 +197,6 @@ const handleRegister = async () => {
 </script>
 
 <style scoped>
-form div { margin-bottom: 10px; }
-label { margin-bottom: 8px; }
-button { margin-top: 10px; }
-
 .gradient-text {
   background: linear-gradient(90deg, #00ffff, #cc00ff);
   background-clip: text;
@@ -172,5 +206,7 @@ button { margin-top: 10px; }
 
 /* ให้ข้อความและ placeholder ใน n-input ชิดซ้าย */
 :deep(.n-input__input-el),
-:deep(.n-input__placeholder) { text-align: left; }
+:deep(.n-input__placeholder) {
+  text-align: left;
+}
 </style>

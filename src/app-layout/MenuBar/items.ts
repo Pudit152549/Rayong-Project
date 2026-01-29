@@ -34,7 +34,8 @@ export function getMenuItems(): MenuOption[] {
               { to: { name: "HrBoard" } },
               { default: () => "แผนก Human Resource" }
             ),
-          key: "HrBoard"
+          key: "HrBoard",
+          icon: renderIcon("material-symbols:group"),
         },
         {
           label: () =>
@@ -43,7 +44,8 @@ export function getMenuItems(): MenuOption[] {
               { to: { name: "IotBoard" } },
               { default: () => "แผนก IOT" }
             ),
-          key: "IotBoard"
+          key: "IotBoard",
+          icon: renderIcon("mdi:internet"),
         }
       ]
     }

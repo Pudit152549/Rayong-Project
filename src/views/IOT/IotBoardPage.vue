@@ -1,6 +1,6 @@
 <template>
   <div class="p-6 w-full">
-    <div class="text-center mb-6">
+    <div class="text-center mb-6 bg-white p-6 rounded-md shadow-md w-full max-w-screen-xl mx-auto">
       <h2 class="gradient-text text-2xl font-bold mb-2">
         ระบบติดตามความคืบหน้างาน (Scrum Board)
       </h2>
@@ -11,58 +11,14 @@
 
     <n-card size="huge" hoverable class="w-full max-w-screen-xl mx-auto">
       <n-space justify="end">
-        <n-button type="info" @click="addData">เพิ่มข้อมูล</n-button>
+        <n-button type="info" @click="addData">
+          <Icon icon="ic:baseline-plus" class="text-xl mr-2" />
+          เพิ่มข้อมูล
+        </n-button>
       </n-space>
       <n-divider />
-        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-5">
-            <n-card class="shadow-md py-3">
-              <div class="flex justify-between items-center">
-                <div>
-                  <div class="text-2xl font-bold text-[#111827]">
-                    6
-                  </div>
-                  <div class="text-[#4B5563]">ทั้งหมด</div>
-                </div>
-                <div class="bg-[#6B7280] text-white w-[48px] h-[48px] rounded-xl flex items-center justify-center">
-                  <Icon icon="lucide:users" width="27" height="27" />
-                </div>
-              </div>
-            </n-card>
-            <n-card class="shadow-md py-3">
-              <div class="flex justify-between items-center">
-                <div>
-                  <div class="text-2xl font-bold text-[#DC2626]">1</div>
-                  <div class="text-[#4B5563] text-[14px]">ยังไม่ดำเนินการ</div>
-                </div>
-                <div class="bg-[#EF4444] text-white w-[48px] h-[48px] rounded-xl flex items-center justify-center">
-                  <Icon icon="material-symbols:cancel-outline" width="28" height="28" />
-                </div>
-              </div>
-            </n-card>
-            <n-card class="shadow-md py-3">
-              <div class="flex justify-between items-center">
-                <div>
-                  <div class="text-2xl font-bold text-[#CA8A04]">3</div>
-                  <div class="text-[#4B5563] text-[14px]">กำลังดำเนินการ</div>
-                </div>
-                <div class="bg-[#EAB308] text-white w-[48px] h-[48px] rounded-xl flex items-center justify-center">
-                  <Icon icon="mdi:clock-outline" width="28" height="28" />
-                </div>
-              </div>
-            </n-card>
-            <n-card class="shadow-md py-3">
-              <div class="flex justify-between items-center">
-                <div>
-                  <div class="text-2xl font-bold text-[#059669]">1</div>
-                  <div class="text-[#4B5563] text-[14px]">เสร็จสิ้น</div>
-                </div>
-                <div class="bg-[#10B981] text-white w-[48px] h-[48px] rounded-xl flex items-center justify-center">
-                  <Icon icon="material-symbols:target" width="28" height="28" />
-                </div>
-              </div>
-            </n-card>
-          </div>
-        <n-divider />
+      <SummaryCards :rows="dataStore.rows" />
+      <n-divider />
         <div class="grid lg:flex gap-2 w-full mb-4">
 				<n-form-item label="ค้นหาแผนงาน" class="w-full" :show-feedback="false">
 					<n-input v-model:value="dataStore.searchKeyword" size="large" type="text" placeholder="ค้นหา">
@@ -192,6 +148,7 @@ import {
 import { EyeOutline, CreateOutline, TrashOutline } from "@vicons/ionicons5";
 import type { RowData, Status } from "@/stores/types";
 import { Icon } from "@iconify/vue"
+import SummaryCards from "@/components/SummaryCards.vue";
 
 const router = useRouter();
 // const userStore = useUserStore();

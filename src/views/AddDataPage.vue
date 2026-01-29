@@ -2,19 +2,18 @@
   <div class="bg-white min-h-screen w-full p-6">
     <div class="max-w-5xl mx-auto">
       <n-card size="huge" hoverable class="w-full max-w-screen-xl mx-auto">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <h3 class="text-xl font-semibold">เพิ่มข้อมูลงาน</h3>
-
-          <div class="flex gap-3">
+          <div class="grid grid-cols-2 gap-3 sm:flex">
             <n-button
-              class="bg-white border border-black text-black"
+              class="bg-white border border-black text-black w-full sm:w-auto"
               @click="handleCancel"
               size="large"
             >
               ยกเลิก
             </n-button>
 
-            <n-button type="success" size="large" @click="handleSubmit">
+            <n-button type="success" size="large" class="w-full sm:w-auto" @click="handleSubmit">
               บันทึก
             </n-button>
           </div>
