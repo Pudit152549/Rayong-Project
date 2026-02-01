@@ -13,18 +13,18 @@
             </h1>
           </div>
 
-          <!-- ✅ โหมดแสดงผล -->
+          <!-- โหมดแสดงผล -->
           <h4 v-if="!isEditing" class="details flex flex-col gap-4">
             <div class="item">
               <div class="mr-2 font-semibold">ชื่อผู้ใช้: {{ profile.username || "-" }}</div>
             </div>
 
             <div class="item">
-              <div class="mr-2 font-semibold">ตำแหน่ง: {{ position || "-" }}</div>
+              <div class="mr-2 font-semibold">ตำแหน่ง: {{ profile.position || "-" }}</div>
             </div>
 
             <div class="item">
-              <div class="mr-2 font-semibold">หน่วยงาน: {{ department || "-" }}</div>
+              <div class="mr-2 font-semibold">หน่วยงาน: {{ profile.department || "-" }}</div>
             </div>
 
             <div class="item">
@@ -32,7 +32,7 @@
             </div>
           </h4>
 
-          <!-- ✅ โหมดแก้ไข -->
+          <!-- โหมดแก้ไข -->
           <n-form
             v-else
             ref="formRef"
@@ -41,7 +41,6 @@
             label-placement="top"
             class="mt-2"
           >
-            <!-- avatar upload -->
             <div class="mb-4">
               <div class="font-semibold mb-2">รูปโปรไฟล์</div>
 
@@ -84,7 +83,6 @@
             </div>
           </n-form>
 
-          <!-- ✅ ปุ่ม responsive: mobile = cols-1 -->
           <div class="mt-4 grid grid-cols-1 md:flex md:justify-end gap-2">
             <n-button secondary class="w-full md:w-auto" @click="goHome">
               กลับหน้า Home
@@ -101,7 +99,7 @@
 
             <template v-else>
               <n-button class="w-full md:w-auto" @click="cancelEdit">ยกเลิก</n-button>
-              <n-button class="w-full md:w-auto" type="success" @click="saveProfile">
+              <n-button class="w-full md:w-auto" type="success" :loading="saving" @click="saveProfile">
                 บันทึก
               </n-button>
             </template>
@@ -113,7 +111,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from "vue";
+import { computed, reactive, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useUserStore } from "@/stores/user";
 import {
@@ -137,26 +135,20 @@ const message = useMessage();
 const profile = computed(() => userStore.profile);
 
 const isEditing = ref(false);
+const saving = ref(false);
 const formRef = ref<FormInst | null>(null);
 
-// mock fields
-const position = ref("นักศึกษา");
-const department = ref("สาขาเทคโนโลยีสารสนเทศ");
-
-// ✅ avatar preview ตอนแก้ไข (ยังไม่ save)
 const tempAvatarUrl = ref<string>("");
 
-// avatar ที่โชว์บนจอ: ถ้า edit ให้โชว์ temp ก่อน
-const displayAvatarUrl = computed(() => {
-  return tempAvatarUrl.value || profile.value.avatarUrl || "";
-});
+const displayAvatarUrl = computed(() => tempAvatarUrl.value || profile.value.avatarUrl || "");
 
+// form สำหรับแก้ไข
 const form = reactive({
-  username: profile.value.username || "",
-  firstname: profile.value.firstname || "",
-  lastname: profile.value.lastname || "",
-  position: profile.value.position || "",
-  department: profile.value.department || ""
+  username: "",
+  firstname: "",
+  lastname: "",
+  position: "",
+  department: ""
 });
 
 const rules: FormRules = {
@@ -165,13 +157,28 @@ const rules: FormRules = {
   lastname: [{ required: true, message: "กรุณากรอกนามสกุล", trigger: ["input", "blur"] }]
 };
 
+// sync form เมื่อ profile เปลี่ยน (เช่น login ใหม่/รีเฟรช)
+watch(
+  () => profile.value,
+  (p) => {
+    if (!isEditing.value) {
+      form.username = p.username || p.email?.split("@")[0] || "";
+      form.firstname = p.firstname || "";
+      form.lastname = p.lastname || "";
+      form.position = p.position || "";
+      form.department = p.department || "";
+      tempAvatarUrl.value = "";
+    }
+  },
+  { immediate: true, deep: true }
+);
+
 function startEdit() {
   form.username = profile.value.username || profile.value.email?.split("@")[0] || "";
   form.firstname = profile.value.firstname || "";
   form.lastname = profile.value.lastname || "";
-  form.position = position.value;
-  form.department = department.value;
-
+  form.position = profile.value.position || "";
+  form.department = profile.value.department || "";
   tempAvatarUrl.value = profile.value.avatarUrl || "";
   isEditing.value = true;
 }
@@ -182,7 +189,6 @@ function cancelEdit() {
   formRef.value?.restoreValidation();
 }
 
-// ✅ รับไฟล์รูป → แปลง base64 เพื่อ preview + เก็บลง store ตอนกด save
 function handleBeforeUpload(options: { file: UploadFileInfo }) {
   const file = options.file.file;
   if (!file) return false;
@@ -193,34 +199,31 @@ function handleBeforeUpload(options: { file: UploadFileInfo }) {
   };
   reader.readAsDataURL(file);
 
-  // กันไม่ให้อัปโหลดขึ้น server (เราใช้แค่ local preview / base64)
-  return false;
+  return false; // ไม่อัปโหลดขึ้น server
 }
 
 async function saveProfile() {
   try {
-    await formRef.value?.validate();
+    await formRef.value?.validate()
 
-    userStore.updateProfile({
+    saving.value = true
+
+    await userStore.updateProfile({
       username: form.username.trim(),
       avatarUrl: tempAvatarUrl.value || profile.value.avatarUrl || "",
-      firstname: form.firstname,
-      lastname: form.lastname,
+      firstname: form.firstname.trim(),
+      lastname: form.lastname.trim(),
       position: form.position.trim(),
-      department: form.department.trim(),
-      age: profile.value.age ?? 19,
-      gender: profile.value.gender || "male"
-    });
+      department: form.department.trim()
+    })
 
-    // mock fields
-    position.value = form.position;
-    department.value = form.department;
-
-    message.success("บันทึกโปรไฟล์สำเร็จ");
-    isEditing.value = false;
-    tempAvatarUrl.value = "";
-  } catch {
-    // validate ไม่ผ่าน -> Naive แสดงแล้ว
+    message.success("บันทึกโปรไฟล์สำเร็จ")
+    isEditing.value = false
+    tempAvatarUrl.value = ""
+  } catch (err: any) {
+    message.error(err?.message ?? "บันทึกไม่สำเร็จ")
+  } finally {
+    saving.value = false
   }
 }
 
@@ -234,8 +237,8 @@ function handleLogout() {
     content: "ต้องการออกจากระบบใช่ไหม?",
     positiveText: "ออกจากระบบ",
     negativeText: "ยกเลิก",
-    onPositiveClick: () => {
-      userStore.logout();
+    onPositiveClick: async () => {
+      await userStore.logout();
       router.push({ name: "Login" });
     }
   });

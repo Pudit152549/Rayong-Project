@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@iconify/vue": "^5.0.0",
+    "@supabase/supabase-js": "^2.93.3",
     "@vicons/ionicons5": "^0.13.0",
     "@vicons/utils": "^0.1.4",
     "echarts": "^6.0.0",

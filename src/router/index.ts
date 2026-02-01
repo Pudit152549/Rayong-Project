@@ -35,6 +35,17 @@ const router = createRouter({
         }
       ]
     },
+    {
+      path: "/auth/callback",
+      component: BlankLayout,
+      children: [
+        {
+          path: "",
+          name: "AuthCallback",
+          component: () => import("@/views/AuthCallback.vue")
+        }
+      ]
+    },
 
     // --------------------
     // MAIN APP (WITH SIDEBAR)

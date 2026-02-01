@@ -1,230 +1,285 @@
-// src/stores/user.ts
 import { defineStore } from "pinia";
+import { supabase } from "@/lib/supabase";
+import type { User } from "@supabase/supabase-js";
 
-export interface RegisteredUser {
+export type RegisterPayload = {
+  firstname: string;
+  lastname: string;
+  username: string;
+  position: string;
+  department: string;
   email: string;
   password: string;
+  avatarUrl?: string;
+};
 
-  username: string;          // ✅ เพิ่ม
-  avatarUrl?: string;        // ✅ เพิ่ม (base64 หรือ url)
-
+export type ProfileUpdate = {
+  username: string;
+  avatarUrl: string;
   firstname: string;
   lastname: string;
-
-  position: string;          // ✅ เพิ่ม
-  department: string;        // ✅ เพิ่ม
-
-  age?: number | null;
-  gender?: string;
-}
+  position: string;
+  department: string;
+};
 
 export interface UserProfile {
+  id: string;
   email: string;
-
-  username: string;          // ✅ เพิ่ม
-  avatarUrl: string;         // ✅ เพิ่ม
-
-  fullName: string;
+  username: string;
+  avatarUrl: string;
   firstname: string;
   lastname: string;
-
-  position: string;          // ✅ เพิ่ม
-  department: string;        // ✅ เพิ่ม
-
-  age: number | null;
-  gender: string;
+  position: string;
+  department: string;
+  fullName: string;
 }
 
-const STORAGE_KEY = "scrumboard_users";
-const STORAGE_SESSION_KEY = "scrumboard_session_email";
+/** ✅ ดึงรูป/ชื่อจาก Google metadata (Supabase จะเก็บไว้ใน user_metadata) */
+function getAuthMeta(user: User | null) {
+  const meta = (user?.user_metadata ?? {}) as Record<string, any>;
 
-function loadUsers(): RegisteredUser[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as RegisteredUser[]) : [];
-  } catch {
-    return [];
-  }
-}
+  const avatarUrl: string =
+    meta.avatar_url ||
+    meta.picture ||
+    "";
 
-function saveUsers(users: RegisteredUser[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
-}
+  // Google มักมี name/full_name, given_name, family_name
+  const firstname: string =
+    meta.given_name ||
+    meta.first_name ||
+    "";
 
-function loadSessionEmail(): string | null {
-  return localStorage.getItem(STORAGE_SESSION_KEY);
-}
+  const lastname: string =
+    meta.family_name ||
+    meta.last_name ||
+    "";
 
-function saveSessionEmail(email: string) {
-  localStorage.setItem(STORAGE_SESSION_KEY, email);
-}
+  // บางทีจะมี full_name / name
+  const fullName: string =
+    meta.full_name ||
+    meta.name ||
+    `${firstname} ${lastname}`.trim();
 
-function clearSessionEmail() {
-  localStorage.removeItem(STORAGE_SESSION_KEY);
+  return { avatarUrl, firstname, lastname, fullName };
 }
 
 export const useUserStore = defineStore("user", {
   state: () => ({
-    users: loadUsers() as RegisteredUser[],
     isLoggedIn: false,
     profile: {
+      id: "",
       email: "",
       username: "",
       avatarUrl: "",
-      fullName: "",
       firstname: "",
       lastname: "",
       position: "",
       department: "",
-      age: null,
-      gender: ""
+      fullName: ""
     } as UserProfile
   }),
 
-  getters: {
-    currentUserEmail: (state) => state.profile.email
-  },
-
   actions: {
-    /** เรียกตอน app start เพื่อ restore session หลังรีเฟรช */
-    initAuth() {
-      const email = loadSessionEmail();
-      if (!email) return;
+    /** เรียกใน main.ts / App.vue ตอนเริ่มแอป */
+    async initAuth() {
+      const { data } = await supabase.auth.getSession();
+      const session = data.session;
 
-      const u = this.users.find((x) => x.email === email);
-      if (!u) return;
+      if (!session?.user) return;
 
       this.isLoggedIn = true;
-      this.profile = {
-        email: u.email,
-        username: u.username || u.email.split("@")[0],
-        avatarUrl: u.avatarUrl ?? "",
-        fullName: `${u.firstname} ${u.lastname}`.trim(),
-        firstname: u.firstname,
-        lastname: u.lastname,
-        position: u.position ?? "",
-        department: u.department ?? "",
-        age: u.age ?? null,
-        gender: u.gender ?? ""
-      };
+
+      // ✅ สำคัญ: ส่ง user เข้าไปด้วย เพื่อเอารูป/ชื่อจาก metadata
+      await this.fetchProfile(session.user.id, session.user.email ?? "", session.user);
+
+      // (แนะนำ) ฟัง auth state change เพื่อ refresh profile หลัง OAuth callback
+      supabase.auth.onAuthStateChange(async (_event, newSession) => {
+        if (!newSession?.user) return;
+
+        this.isLoggedIn = true;
+        await this.fetchProfile(
+          newSession.user.id,
+          newSession.user.email ?? "",
+          newSession.user
+        );
+      });
     },
 
-    /** ✅ สมัครสมาชิก (Register) */
-    register(payload: Omit<RegisteredUser, "email"> & { email: string }) {
+    async register(payload: RegisterPayload) {
       const email = payload.email.trim().toLowerCase();
 
-      const exists = this.users.some((u) => u.email.toLowerCase() === email);
-      if (exists) {
-        return { ok: false, message: "อีเมลนี้ถูกใช้งานแล้ว" } as const;
-      }
-
-      // ✅ กันข้อมูลกรอกว่าง: username fallback
-      const username = payload.username?.trim() || email.split("@")[0];
-
-      const user: RegisteredUser = {
-        ...payload,
+      const { data, error } = await supabase.auth.signUp({
         email,
-        username,
-        avatarUrl: payload.avatarUrl ?? "",
-        position: payload.position ?? "",
-        department: payload.department ?? ""
-      };
+        password: payload.password
+      });
 
-      this.users.push(user);
-      saveUsers(this.users);
+      if (error) return { ok: false, message: error.message } as const;
+      if (!data.user) return { ok: false, message: "No user returned" } as const;
+
+      const { error: pErr } = await supabase.from("profiles").upsert({
+        id: data.user.id,
+        email,
+        username: payload.username || email.split("@")[0],
+        firstname: payload.firstname,
+        lastname: payload.lastname,
+        position: payload.position,
+        department: payload.department,
+        avatar_url: payload.avatarUrl ?? ""
+      });
+
+      if (pErr) return { ok: false, message: pErr.message } as const;
 
       return { ok: true } as const;
     },
 
-    /** ✅ ล็อกอินจาก user ที่สมัครไว้ */
-    login(email: string, password: string) {
+    async login(email: string, password: string) {
       const e = email.trim().toLowerCase();
-      const p = password;
 
-      const u = this.users.find(
-        (x) => x.email.toLowerCase() === e && x.password === p
-      );
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: e,
+        password
+      });
 
-      if (!u) {
-        this.logout();
-        return { ok: false, message: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" } as const;
-      }
+      if (error) return { ok: false, message: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" } as const;
 
       this.isLoggedIn = true;
-      this.profile = {
-        email: u.email,
-        username: u.username || u.email.split("@")[0],
-        avatarUrl: u.avatarUrl ?? "",
-        fullName: `${u.firstname} ${u.lastname}`.trim(),
-        firstname: u.firstname,
-        lastname: u.lastname,
-        position: u.position ?? "",
-        department: u.department ?? "",
-        age: u.age ?? null,
-        gender: u.gender ?? ""
-      };
+      await this.fetchProfile(data.user.id, data.user.email ?? e, data.user);
 
-      saveSessionEmail(u.email);
       return { ok: true } as const;
     },
 
-    logout() {
-      this.isLoggedIn = false;
-      this.profile = {
-        email: "",
-        username: "",
-        avatarUrl: "",
-        fullName: "",
-        firstname: "",
-        lastname: "",
-        position: "",
-        department: "",
-        age: null,
-        gender: ""
-      };
-      clearSessionEmail();
+    async loginWithGoogle() {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`
+        }
+      });
+
+      if (error) return { ok: false, message: error.message } as const;
+      return { ok: true } as const;
     },
 
-    /** ✅ อัปเดตโปรไฟล์ current user + sync ลง users */
-    updateProfile(update: {
-      username: string;
-      avatarUrl: string;
-      firstname: string;
-      lastname: string;
-      position: string;     // ✅ เพิ่ม
-      department: string;   // ✅ เพิ่ม
-      age: number | null;
-      gender: string;
-    }) {
-      if (!this.isLoggedIn || !this.profile.email) return;
+    /** ✅ fetch profile + เติมข้อมูลจาก auth metadata (สำคัญกับ Google) */
+    async fetchProfile(userId: string, fallbackEmail: string, user?: User) {
+      const { avatarUrl, firstname, lastname, fullName } = getAuthMeta(user ?? null);
 
-      // update state profile
-      this.profile.username = update.username;
-      this.profile.avatarUrl = update.avatarUrl;
-      this.profile.firstname = update.firstname;
-      this.profile.lastname = update.lastname;
-      this.profile.fullName = `${update.firstname} ${update.lastname}`.trim();
-      this.profile.position = update.position;
-      this.profile.department = update.department;
-      this.profile.age = update.age;
-      this.profile.gender = update.gender;
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .single();
 
-      // update in users list
-      const idx = this.users.findIndex((u) => u.email === this.profile.email);
-      if (idx !== -1) {
-        this.users[idx] = {
-          ...this.users[idx],
+      // 1) ถ้าไม่มี row → สร้างจาก metadata (รวมรูป)
+      if (error || !data) {
+        const email = (user?.email ?? fallbackEmail).toLowerCase();
+        const username = (fullName || email.split("@")[0]).toString() || email.split("@")[0];
+
+        await supabase.from("profiles").upsert({
+          id: userId,
+          email,
+          username,
+          firstname: firstname ?? "",
+          lastname: lastname ?? "",
+          position: "",
+          department: "",
+          avatar_url: avatarUrl ?? ""
+        });
+
+        const again = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", userId)
+          .single();
+
+        if (again.data) this.applyProfile(again.data);
+        return;
+      }
+
+      // 2) ถ้ามี row แล้ว แต่ avatar_url ว่าง และ Google มีรูป → เติมให้
+      const rowAvatar = (data as any).avatar_url ?? "";
+      if (!rowAvatar && avatarUrl) {
+        await supabase
+          .from("profiles")
+          .update({
+            avatar_url: avatarUrl,
+            // ถ้าโปรไฟล์ยังว่าง ก็เติมชื่อเบา ๆ ให้ด้วย (ไม่ทับของเดิม)
+            firstname: (data as any).firstname ? undefined : firstname,
+            lastname: (data as any).lastname ? undefined : lastname,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", userId);
+
+        // โหลดใหม่ให้ state ชัวร์ ๆ
+        const refreshed = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", userId)
+          .single();
+
+        if (refreshed.data) {
+          this.applyProfile(refreshed.data);
+          return;
+        }
+      }
+
+      this.applyProfile(data);
+    },
+
+    applyProfile(row: any) {
+      this.profile = {
+        id: row.id,
+        email: row.email ?? "",
+        username: row.username ?? "",
+        avatarUrl: row.avatar_url ?? "",
+        firstname: row.firstname ?? "",
+        lastname: row.lastname ?? "",
+        position: row.position ?? "",
+        department: row.department ?? "",
+        fullName: `${row.firstname ?? ""} ${row.lastname ?? ""}`.trim()
+      };
+    },
+
+    async updateProfile(update: ProfileUpdate) {
+      if (!this.isLoggedIn || !this.profile.id) return;
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({
           username: update.username,
-          avatarUrl: update.avatarUrl,
+          avatar_url: update.avatarUrl,
           firstname: update.firstname,
           lastname: update.lastname,
           position: update.position,
           department: update.department,
-          age: update.age,
-          gender: update.gender
-        };
-        saveUsers(this.users);
-      }
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", this.profile.id);
+
+      if (error) throw new Error(error.message);
+
+      this.profile.username = update.username;
+      this.profile.avatarUrl = update.avatarUrl;
+      this.profile.firstname = update.firstname;
+      this.profile.lastname = update.lastname;
+      this.profile.position = update.position;
+      this.profile.department = update.department;
+      this.profile.fullName = `${update.firstname} ${update.lastname}`.trim();
+    },
+
+    async logout() {
+      await supabase.auth.signOut();
+      this.isLoggedIn = false;
+      this.applyProfile({
+        id: "",
+        email: "",
+        username: "",
+        avatar_url: "",
+        firstname: "",
+        lastname: "",
+        position: "",
+        department: ""
+      });
     }
   }
 });

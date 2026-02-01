@@ -10,8 +10,8 @@ import { useUserStore } from "@/stores/user";
 
 const userStore = useUserStore();
 
-onMounted(() => {
-  userStore.initAuth();
+onMounted(async () => {
+  await userStore.initAuth();
 });
 </script>
 

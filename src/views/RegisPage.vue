@@ -20,17 +20,14 @@
             <n-input v-model:value="form.lastname" placeholder="Lastname" class="w-full mt-1" />
           </n-form-item>
 
-          <!-- ✅ เพิ่ม Username -->
           <n-form-item path="username" label="Username:" class="mb-2">
             <n-input v-model:value="form.username" placeholder="Username" class="w-full mt-1" />
           </n-form-item>
 
-          <!-- ✅ เพิ่ม Position -->
           <n-form-item path="position" label="ตำแหน่ง:" class="mb-2">
             <n-input v-model:value="form.position" placeholder="ตำแหน่ง" class="w-full mt-1" />
           </n-form-item>
 
-          <!-- ✅ เพิ่ม Department -->
           <n-form-item path="department" label="หน่วยงาน:" class="mb-2">
             <n-input v-model:value="form.department" placeholder="หน่วยงาน" class="w-full mt-1" />
           </n-form-item>
@@ -130,7 +127,7 @@ const form = reactive<RegisterForm>({
   confirmPassword: ""
 });
 
-// ✅ auto ตั้ง username จาก email (ถ้ายังไม่พิมพ์)
+// auto ตั้ง username จาก email (ถ้ายังไม่พิมพ์)
 watch(
   () => form.email,
   (val) => {
@@ -166,20 +163,19 @@ const handleRegister = async () => {
     return;
   }
 
-  const res = userStore.register({
-    firstname: form.firstname.trim(),
-    lastname: form.lastname.trim(),
+  // ✅ สำคัญ: register เป็น async ต้อง await
+  const res = await userStore.register({
     email: form.email.trim(),
     password: form.password,
 
-    username: form.username.trim(),     // ✅ required by type
-    avatarUrl: "",                      // ✅ optional แต่ส่งไปเลย
+    username: form.username.trim() || form.email.split("@")[0],
+    firstname: form.firstname.trim(),
+    lastname: form.lastname.trim(),
+    position: form.position.trim(),
+    department: form.department.trim(),
 
-    position: form.position.trim(),     // ✅ เก็บใน store
-    department: form.department.trim(), // ✅ เก็บใน store
-
-    age: null,
-    gender: ""
+    // (ถ้าใน store รองรับ avatarUrl ก็ส่งได้ ไม่งั้นลบทิ้ง)
+    avatarUrl: ""
   });
 
   if (!res.ok) {
@@ -203,8 +199,6 @@ const handleRegister = async () => {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
-
-/* ให้ข้อความและ placeholder ใน n-input ชิดซ้าย */
 :deep(.n-input__input-el),
 :deep(.n-input__placeholder) {
   text-align: left;
