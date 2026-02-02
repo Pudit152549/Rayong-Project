@@ -104,7 +104,12 @@ const progressPercent = computed(() => {
 // ถ้าอยาก “ล่าสุดจริง” แนะนำให้มี createdAt ใน RowData ในอนาคต
 const recentRows = computed(() => {
   return [...allRows.value]
-    .sort((a, b) => b.id - a.id)
+    .sort((a, b) => {
+      const bt = new Date(b.created_at ?? 0).getTime()
+      const at = new Date(a.created_at ?? 0).getTime()
+      return bt - at
+    })
+
     .slice(0, 5);
 });
 

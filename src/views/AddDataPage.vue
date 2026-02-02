@@ -84,9 +84,9 @@ import {
   useMessage
 } from "naive-ui";
 import type { FormInst, FormRules } from "naive-ui";
-
 import { useDeptStore } from "@/stores/departmentStore";
 import type { Status } from "@/stores/types";
+import { useTasksStore } from "@/stores/tasks";
 
 interface AddDataForm {
   project_name: string;
@@ -98,8 +98,8 @@ interface AddDataForm {
 
 const router = useRouter();
 const message = useMessage();
-
-const { from, deptKey, activeStore } = useDeptStore();
+const tasksStore = useTasksStore();
+const { from, deptKey } = useDeptStore();
 
 const formValue = reactive<AddDataForm>({
   project_name: "",
@@ -149,7 +149,8 @@ const handleSubmit = async () => {
   try {
     await formRef.value?.validate();
 
-    activeStore.value.addRow({
+    await tasksStore.addTask(deptKey.value as "hr" | "iot", {
+      board_id: await tasksStore.resolveBoardIdBySlug(deptKey.value as "hr" | "iot"),
       project_name: { name: formValue.project_name },
       assigned_agency: formValue.assigned_agency,
       responsible_person_name: formValue.responsible_person_name,

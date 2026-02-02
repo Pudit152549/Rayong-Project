@@ -11,9 +11,11 @@
       </n-space>
 
       <n-divider />
-
+      <n-card v-if="loading" title="กำลังโหลด..." class="shadow-md">
+        กรุณารอสักครู่
+      </n-card>
       <n-card v-if="!currentRow" title="ไม่พบข้อมูล" class="shadow-md">
-        ไม่พบรายการที่ต้องการแก้ไข (id: {{ idNumber }})
+        ไม่พบรายการที่ต้องการแก้ไข (id: {{ props.id }})
       </n-card>
 
       <n-form
@@ -63,46 +65,36 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, watchEffect } from "vue";
+import { reactive, ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import type { FormInst, FormItemRule } from "naive-ui";
 import {
-  NCard,
-  NDivider,
-  NSpace,
-  NButton,
-  NForm,
-  NFormItem,
-  NInput,
-  NSelect,
-  NDatePicker,
   useDialog,
   useMessage
 } from "naive-ui";
 
-import { useDeptStore } from "@/stores/departmentStore";
 import type { RowData, Status } from "@/stores/types";
+import { useDeptStore } from "@/stores/departmentStore";
+import { useTasksStore } from "@/stores/tasks";
 
-const props = defineProps<{ id: string | number }>();
+const props = defineProps<{ id: string }>();
 
 const router = useRouter();
 const dialog = useDialog();
 const message = useMessage();
 
-const { from, deptKey, activeStore } = useDeptStore();
+const tasksStore = useTasksStore();
+const { from } = useDeptStore(); // from ยังใช้สำหรับกลับหน้าเดิมได้
 
-const idNumber = computed(() => Number(props.id));
+const loading = ref(false);
+const currentRow = ref<RowData | null>(null);
+
 
 const statusOptions = [
   { label: "To Do", value: "todo" },
   { label: "In Progress", value: "in_progress" },
   { label: "Done", value: "done" }
 ];
-
-// ✅ หา row จาก store ของแผนกที่ถูกต้อง
-const currentRow = computed<RowData | undefined>(() =>
-  activeStore.value.rows.find((r: RowData) => r.id === idNumber.value)
-);
 
 const editForm = reactive<{
   projectName: string;
@@ -118,16 +110,6 @@ const editForm = reactive<{
   status: null
 });
 
-watchEffect(() => {
-  if (!currentRow.value) return;
-
-  editForm.projectName = currentRow.value.project_name?.name ?? "";
-  editForm.assignedAgency = currentRow.value.assigned_agency ?? "";
-  editForm.responsiblePerson = currentRow.value.responsible_person_name ?? "";
-  editForm.period = currentRow.value.period ?? null;
-  editForm.status = currentRow.value.status ?? null;
-});
-
 const formRef = ref<FormInst | null>(null);
 
 const onPeriodUpdate = () => {
@@ -136,8 +118,16 @@ const onPeriodUpdate = () => {
 
 const rules = {
   projectName: { required: true, message: "กรุณากรอกชื่อแผนงาน", trigger: ["input", "blur"] },
-  assignedAgency: { required: true, message: "กรุณากรอกผู้มอบหมาย/หน่วยงาน", trigger: ["input", "blur"] },
-  responsiblePerson: { required: true, message: "กรุณากรอกชื่อผู้รับผิดชอบ", trigger: ["input", "blur"] },
+  assignedAgency: {
+    required: true,
+    message: "กรุณากรอกผู้มอบหมาย/หน่วยงาน",
+    trigger: ["input", "blur"]
+  },
+  responsiblePerson: {
+    required: true,
+    message: "กรุณากรอกชื่อผู้รับผิดชอบ",
+    trigger: ["input", "blur"]
+  },
   period: {
     trigger: ["change", "blur", "input"],
     validator: (_rule: FormItemRule, value: any) => {
@@ -153,6 +143,34 @@ const rules = {
   status: { required: true, message: "กรุณาเลือกสถานะ", trigger: ["change", "blur"] }
 };
 
+// ✅ โหลด task ตาม uuid โดยตรง
+onMounted(async () => {
+  try {
+    loading.value = true;
+
+    const row = await tasksStore.fetchOneTask(props.id);
+    currentRow.value = row;
+
+    // เติมค่าเข้า form
+    editForm.projectName = row.project_name?.name ?? "";
+    editForm.assignedAgency = row.assigned_agency ?? "";
+    editForm.responsiblePerson = row.responsible_person_name ?? "";
+    editForm.period = row.period ?? null;
+    editForm.status = row.status ?? null;
+  } catch (e: any) {
+    message.error(e?.message ?? "โหลดข้อมูลไม่สำเร็จ");
+  } finally {
+    loading.value = false;
+  }
+});
+
+// ✅ หา deptKey จาก board_id จริง (แม้ query หายก็ไม่พัง)
+async function resolveDeptKeyFromBoardId(boardId: string): Promise<"hr" | "iot"> {
+  const hrId = await tasksStore.resolveBoardIdBySlug("hr");
+  if (boardId === hrId) return "hr";
+  return "iot";
+}
+
 const handleEdit = async () => {
   if (!currentRow.value) return;
 
@@ -161,20 +179,30 @@ const handleEdit = async () => {
 
     dialog.warning({
       title: "Confirm",
-      content: `ยืนยันการแก้ไขข้อมูลหรือไม่? (${deptKey.value.toUpperCase()})`,
+      content: "ยืนยันการแก้ไขข้อมูลหรือไม่?",
       positiveText: "Confirm",
       negativeText: "Cancel",
-      onPositiveClick: () => {
-        activeStore.value.updateRow(idNumber.value, {
-          project_name: { name: editForm.projectName },
-          assigned_agency: editForm.assignedAgency,
-          responsible_person_name: editForm.responsiblePerson,
-          period: editForm.period,
-          status: editForm.status as Status
-        });
+      onPositiveClick: async () => {
+        try {
+          loading.value = true;
 
-        message.success("แก้ไขข้อมูลสำเร็จ");
-        router.push({ name: from.value });
+          const dept = await resolveDeptKeyFromBoardId(currentRow.value!.board_id);
+
+          await tasksStore.updateTask(dept, props.id, {
+            project_name: { name: editForm.projectName },
+            assigned_agency: editForm.assignedAgency,
+            responsible_person_name: editForm.responsiblePerson,
+            period: editForm.period,
+            status: editForm.status! // rules บังคับเลือกแล้ว
+          });
+
+          message.success("แก้ไขข้อมูลสำเร็จ");
+          router.push({ name: from.value });
+        } catch (e: any) {
+          message.error(e?.message ?? "บันทึกไม่สำเร็จ");
+        } finally {
+          loading.value = false;
+        }
       }
     });
   } catch {

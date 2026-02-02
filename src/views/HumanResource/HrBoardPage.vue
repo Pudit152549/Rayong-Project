@@ -149,7 +149,12 @@ import { EyeOutline, CreateOutline, TrashOutline } from "@vicons/ionicons5";
 import type { RowData, Status } from "@/stores/types";
 import { Icon } from "@iconify/vue"
 import SummaryCards from "@/components/SummaryCards.vue";
+import { useTasksStore } from "@/stores/tasks";
+const tasksStore = useTasksStore();
 
+onMounted(async () => {
+  await dataStore.fetch(); // ✅ โหลดจาก supabase
+});
 
 const router = useRouter();
 // const userStore = useUserStore();
@@ -284,10 +289,10 @@ const confirmDelete = (row: RowData) => {
     content: "แน่ใจหรือไม่ว่าจะลบข้อมูลนี้?",
     positiveText: "ยืนยัน",
     negativeText: "ยกเลิก",
-    onPositiveClick: () => {
+    onPositiveClick: async () => {
       // ✅ ตรงนี้ค่อยผูกกับ store/api จริงตอนพร้อม
       // ตัวอย่าง:
-      dataStore.deleteRow(row.id);
+      await tasksStore.deleteTask("hr", row.id);
       console.log("confirm delete:", row);
     }
   });

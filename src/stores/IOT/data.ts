@@ -1,54 +1,39 @@
 import { defineStore } from "pinia";
-import type { RowData, Status } from "@/stores/types";
+import type { Status } from "@/stores/types";
+import { useTasksStore } from "@/stores/tasks";
 
 export const useIotDataStore = defineStore("iotData", {
   state: () => ({
-    rows: [
-    {
-        id: 1,
-        project_name: { name: "แผงวงจรประตูอัตโนมัติ" },
-        assigned_agency: "สำนักงานการศึกษาขั้นพื้นฐาน",
-        responsible_person_name: "สมชาย ใจดี",
-        period: [1758906000000, 1759165200000],
-        status: "in_progress" as Status
-      },
-      {
-        id: 2,
-        project_name: { name: "พัฒนาโครงสร้างพื้นฐานดิจิทัล" },
-        assigned_agency: "สำนักงานพัฒนาธุรกรรมทางอิเล็กทรอนิกส์",
-        responsible_person_name: "สมปอง มีสุข",
-        period: [1759200000000, 1759459200000],
-        status: "todo" as Status
-      }
-    ] as RowData[],
     searchKeyword: "",
     agencyFilter: null as string | null,
     statusFilter: null as Status | null
   }),
+
   getters: {
-    filteredRows(state): RowData[] {
-      return state.rows.filter((row) => {
+    rows(): any[] {
+      const tasks = useTasksStore();
+      return tasks.byBoard["iot"] ?? [];
+    },
+
+    filteredRows(): any[] {
+      const rows = this.rows;
+      return rows.filter((row) => {
         const matchKeyword =
-          !state.searchKeyword ||
-          row.project_name.name.toLowerCase().includes(state.searchKeyword.toLowerCase());
-        const matchAgency = !state.agencyFilter || row.assigned_agency === state.agencyFilter;
-        const matchStatus = !state.statusFilter || row.status === state.statusFilter;
+          !this.searchKeyword ||
+          row.project_name.name.toLowerCase().includes(this.searchKeyword.toLowerCase());
+        const matchAgency = !this.agencyFilter || row.assigned_agency === this.agencyFilter;
+        const matchStatus = !this.statusFilter || row.status === this.statusFilter;
         return matchKeyword && matchAgency && matchStatus;
       });
     }
   },
+
   actions: {
-    addRow(payload: Omit<RowData, "id">) {
-      const maxId = this.rows.reduce((m, r) => Math.max(m, r.id), 0);
-      this.rows.push({ id: maxId + 1, ...payload });
+    async fetch() {
+      const tasks = useTasksStore();
+      await tasks.fetchByBoardSlug("iot");
     },
-    updateRow(id: number, partial: Partial<RowData>) {
-      const idx = this.rows.findIndex((r) => r.id === id);
-      if (idx !== -1) this.rows[idx] = { ...this.rows[idx], ...partial };
-    },
-    deleteRow(id: number) {
-      this.rows = this.rows.filter((r) => r.id !== id);
-    },
+
     clearFilters() {
       this.searchKeyword = "";
       this.agencyFilter = null;
