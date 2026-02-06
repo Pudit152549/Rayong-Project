@@ -70,7 +70,16 @@ import { useRouter } from "vue-router";
 import type { FormInst, FormItemRule } from "naive-ui";
 import {
   useDialog,
-  useMessage
+  useMessage,
+  NForm,
+  NFormItem,
+  NInput,
+  NButton,
+  NCard,
+  NDivider,
+  NDatePicker,
+  NSpace,
+  NSelect
 } from "naive-ui";
 
 import type { RowData, Status } from "@/stores/types";
