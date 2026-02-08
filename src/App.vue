@@ -5,14 +5,6 @@ import {
   NDialogProvider,
   NNotificationProvider
 } from "naive-ui";
-import { onMounted } from "vue";
-import { useUserStore } from "@/stores/user";
-
-const userStore = useUserStore();
-
-onMounted(async () => {
-  await userStore.initAuth();
-});
 </script>
 
 <template>

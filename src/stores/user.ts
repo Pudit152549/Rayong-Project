@@ -85,7 +85,20 @@ export const useUserStore = defineStore("user", {
       const { data } = await supabase.auth.getSession();
       const session = data.session;
 
-      if (!session?.user) return;
+      if (!session?.user) {
+        this.isLoggedIn = false;
+        this.applyProfile({
+          id: "",
+          email: "",
+          username: "",
+          avatar_url: "",
+          firstname: "",
+          lastname: "",
+          position: "",
+          department: ""
+        });
+        return;
+      }
 
       this.isLoggedIn = true;
 
@@ -199,28 +212,25 @@ export const useUserStore = defineStore("user", {
       // 2) ถ้ามี row แล้ว แต่ avatar_url ว่าง และ Google มีรูป → เติมให้
       const rowAvatar = (data as any).avatar_url ?? "";
       if (!rowAvatar && avatarUrl) {
-        await supabase
-          .from("profiles")
-          .update({
-            avatar_url: avatarUrl,
-            // ถ้าโปรไฟล์ยังว่าง ก็เติมชื่อเบา ๆ ให้ด้วย (ไม่ทับของเดิม)
-            firstname: (data as any).firstname ? undefined : firstname,
-            lastname: (data as any).lastname ? undefined : lastname,
-            updated_at: new Date().toISOString()
-          })
-          .eq("id", userId);
+        const patch: any = {
+          avatar_url: avatarUrl,
+          updated_at: new Date().toISOString()
+        };
 
-        // โหลดใหม่ให้ state ชัวร์ ๆ
-        const refreshed = await supabase
+        if (!(data as any).firstname && firstname) patch.firstname = firstname;
+        if (!(data as any).lastname && lastname) patch.lastname = lastname;
+
+        const { data: updatedRow, error: upErr } = await supabase
           .from("profiles")
-          .select("*")
+          .update(patch)
           .eq("id", userId)
+          .select("*")
           .single();
 
-        if (refreshed.data) {
-          this.applyProfile(refreshed.data);
-          return;
-        }
+        if (upErr) throw new Error(upErr.message);
+
+        this.applyProfile(updatedRow);
+        return;
       }
 
       this.applyProfile(data);

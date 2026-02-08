@@ -133,14 +133,13 @@ const dialog = useDialog();
 const message = useMessage();
 
 const profile = computed(() => userStore.profile);
+const displayAvatarUrl = computed(() => tempAvatarUrl.value || profile.value.avatarUrl || "");
 
 const isEditing = ref(false);
 const saving = ref(false);
 const formRef = ref<FormInst | null>(null);
 
 const tempAvatarUrl = ref<string>("");
-
-const displayAvatarUrl = computed(() => tempAvatarUrl.value || profile.value.avatarUrl || "");
 
 // form สำหรับแก้ไข
 const form = reactive({
@@ -189,18 +188,86 @@ function cancelEdit() {
   formRef.value?.restoreValidation();
 }
 
-function handleBeforeUpload(options: { file: UploadFileInfo }) {
+async function compressImageToBase64(
+  file: File,
+  opts?: {
+    maxWidth?: number;   // จำกัดกว้าง/สูงสุด
+    maxHeight?: number;
+    quality?: number;    // 0-1 (ยิ่งต่ำยิ่งเล็ก)
+    mimeType?: "image/jpeg" | "image/webp"; // แนะนำ jpeg/webp
+  }
+): Promise<string> {
+  const {
+    maxWidth = 512,
+    maxHeight = 512,
+    quality = 0.7,
+    mimeType = "image/jpeg"
+  } = opts ?? {};
+
+  // อ่านไฟล์เป็น DataURL เพื่อโหลดเข้า Image
+  const dataUrl: string = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("อ่านไฟล์รูปไม่สำเร็จ"));
+    reader.readAsDataURL(file);
+  });
+
+  const img: HTMLImageElement = await new Promise((resolve, reject) => {
+    const im = new Image();
+    im.onload = () => resolve(im);
+    im.onerror = () => reject(new Error("โหลดรูปไม่สำเร็จ"));
+    im.src = dataUrl;
+  });
+
+  // คำนวณสัดส่วนให้ไม่เกิน maxWidth/maxHeight
+  let { width, height } = img;
+  const ratio = Math.min(maxWidth / width, maxHeight / height, 1);
+  width = Math.round(width * ratio);
+  height = Math.round(height * ratio);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas context ไม่พร้อมใช้งาน");
+
+  // วาดรูปลง canvas
+  ctx.drawImage(img, 0, 0, width, height);
+
+  // แปลงเป็น base64 (ลดคุณภาพ)
+  const compressed = canvas.toDataURL(mimeType, quality);
+  return compressed;
+}
+
+async function handleBeforeUpload(options: { file: UploadFileInfo }) {
   const file = options.file.file;
   if (!file) return false;
 
-  const reader = new FileReader();
-  reader.onload = () => {
-    tempAvatarUrl.value = String(reader.result || "");
-  };
-  reader.readAsDataURL(file);
+  // กันไฟล์ที่ใหญ่แบบโหดๆ (กัน browser หน่วง)
+  const maxInputMb = 6;
+  if (file.size > maxInputMb * 1024 * 1024) {
+    message.error(`รูปใหญ่เกินไป (เกิน ${maxInputMb}MB)`);
+    return false;
+  }
+
+  try {
+    // 👇 ปรับค่าตรงนี้ได้ตามใจ
+    tempAvatarUrl.value = await compressImageToBase64(file, {
+      maxWidth: 512,
+      maxHeight: 512,
+      quality: 0.7,
+      mimeType: "image/jpeg"
+    });
+
+    message.success("บีบอัดรูปเรียบร้อย");
+  } catch (e: any) {
+    message.error(e?.message ?? "บีบอัดรูปไม่สำเร็จ");
+  }
 
   return false; // ไม่อัปโหลดขึ้น server
 }
+
 
 async function saveProfile() {
   try {

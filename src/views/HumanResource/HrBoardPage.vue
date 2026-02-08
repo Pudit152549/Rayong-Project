@@ -17,11 +17,11 @@
         </n-button>
       </n-space>
       <n-divider />
-      <SummaryCards :rows="dataStore.rows" />
+      <SummaryCards :rows="rows" />
       <n-divider />
         <div class="grid lg:flex gap-2 w-full mb-4">
 				<n-form-item label="ค้นหาแผนงาน" class="w-full" :show-feedback="false">
-					<n-input v-model:value="dataStore.searchKeyword" size="large" type="text" placeholder="ค้นหา">
+					<n-input v-model:value="searchKeyword" size="large" type="text" placeholder="ค้นหา">
 						<template #suffix>
 							<n-icon>
 								<Icon icon="bx:search-alt" />
@@ -153,8 +153,11 @@ import { useTasksStore } from "@/stores/tasks";
 const tasksStore = useTasksStore();
 
 onMounted(async () => {
-  await dataStore.fetch(); // ✅ โหลดจาก supabase
+  await tasksStore.fetchByBoardSlug("hr");
 });
+
+const rows = computed(() => tasksStore.byBoard["hr"] ?? []);
+const searchKeyword = ref("");
 
 const router = useRouter();
 // const userStore = useUserStore();
@@ -175,10 +178,26 @@ const statusFilter = computed({
   }
 });
 
-const filteredRows = computed(() => dataStore.filteredRows);
+const filteredRows = computed(() => {
+  const kw = searchKeyword.value.trim().toLowerCase();
+  const st = statusFilter.value;
+
+  return (tasksStore.byBoard["hr"] ?? []).filter((r) => {
+    const matchKw =
+      !kw ||
+      r.project_name?.name?.toLowerCase().includes(kw) ||
+      r.assigned_agency?.toLowerCase().includes(kw) ||
+      r.responsible_person_name?.toLowerCase().includes(kw);
+
+    const matchStatus = !st || r.status === st;
+    return matchKw && matchStatus;
+  });
+});
+
 
 const clearFilters = () => {
-  dataStore.clearFilters();
+  searchKeyword.value = "";
+  statusFilter.value = null;
 };
 
 const checkedRowKeys = ref<number[]>([]);

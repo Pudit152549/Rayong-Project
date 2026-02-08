@@ -24,12 +24,19 @@
         </div>
       </div>
       <div class="ml-auto flex items-center gap-2 md:gap-5">
-        <n-button text @click="goProfile">
-          <template #icon>
-            <Icon icon="mdi:account" />
+        <n-tooltip placement="bottom" trigger="hover">
+          <template #trigger>
+            <span class="inline-flex items-center gap-2">
+              <n-button text @click="goProfile">
+                <template #icon>
+                  <Icon icon="mdi:account" />
+                </template>
+                <span class="hidden sm:inline">โปรไฟล์</span>
+              </n-button>
+            </span>
           </template>
-          <span class="hidden sm:inline">โปรไฟล์</span>
-        </n-button>
+          Admin
+        </n-tooltip>
         <n-button text>
           <template #icon>
             <Icon icon="mdi:bell" />
@@ -69,7 +76,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import { NButton, NDrawer, NDrawerContent, NIcon } from "naive-ui";
+import { NButton, NDrawer, NDrawerContent, NIcon, NTooltip } from "naive-ui";
 import { Icon } from "@iconify/vue";
 import MenuBar from "@/app-layout/MenuBar/index.vue";
 import { useUserStore } from "@/stores/user";
