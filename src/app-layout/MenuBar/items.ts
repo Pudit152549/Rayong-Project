@@ -48,6 +48,16 @@ export function getMenuItems(): MenuOption[] {
           icon: renderIcon("mdi:internet"),
         }
       ]
-    }
+    },
+    {
+      label: () =>
+        h(
+          RouterLink,
+          { to: { name: "UserManagement" } },
+          { default: () => "การจัดการผู้ใช้งาน" }
+        ),
+      key: "UserManagement",
+      icon: renderIcon("material-symbols:group-outline"),
+    },
   ];
 }

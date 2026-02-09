@@ -48,6 +48,7 @@
                 :row-key="rowKey"
                 size="small"
                 bordered
+                :pagination="pagination"
               />
             </div>
           </n-card>
@@ -58,7 +59,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, h } from "vue";
+import { computed, h, onMounted, reactive } from "vue";
 import {
   NCard,
   NProgress,
@@ -69,11 +70,40 @@ import {
 
 import { useHrDataStore } from "@/stores/HumanResource/data";
 import { useIotDataStore } from "@/stores/IOT/data";
+import { useUserStore } from "@/stores/user";
 import type { RowData, Status } from "@/stores/types";
 
 // ✅ store แยก domain
 const hrStore = useHrDataStore();
 const iotStore = useIotDataStore();
+const userStore = useUserStore();
+
+const pagination = reactive({
+  page: 1,
+  pageSize: 5,
+  showSizePicker: false,
+  onChange: (page: number) => {
+    pagination.page = page
+  },
+  onUpdatePageSize: (pageSize: number) => {
+    pagination.pageSize = pageSize
+    pagination.page = 1
+  }
+})
+
+
+onMounted(async () => {
+  if (!userStore.isLoggedIn) return;
+
+  const needHr = !hrStore.rows?.length;
+  const needIot = !iotStore.rows?.length;
+
+  const jobs: Promise<any>[] = [];
+  if (needHr) jobs.push(hrStore.fetch());
+  if (needIot) jobs.push(iotStore.fetch());
+
+  if (jobs.length) await Promise.all(jobs);
+});
 
 // ✅ สร้างชนิดข้อมูลสำหรับหน้า dashboard (เพิ่ม department เฉพาะหน้า)
 type DashboardRow = RowData & {
@@ -109,8 +139,6 @@ const recentRows = computed(() => {
       const at = new Date(a.created_at ?? 0).getTime()
       return bt - at
     })
-
-    .slice(0, 5);
 });
 
 const rowKey = (row: DashboardRow) => `${row.department}-${row.id}`;

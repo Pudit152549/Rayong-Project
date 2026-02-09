@@ -120,7 +120,7 @@ export const useTasksStore = defineStore("tasks", {
         .from("tasks")
         .select("*")
         .eq("id", taskId)
-        .single();
+        .maybeSingle();
 
       if (error) throw new Error(error.message);
       if (!data) throw new Error("Task not found");
@@ -153,10 +153,15 @@ export const useTasksStore = defineStore("tasks", {
         .from("tasks")
         .insert(insertPayload)
         .select("*")
-        .single();
+        .maybeSingle();
 
       if (error) throw new Error(error.message);
-
+      if (!data) {
+        // insert อาจสำเร็จ แต่ select คืน row ไม่ได้เพราะ RLS
+        // ทางออกง่ายสุด: refetch board
+        await this.fetchByBoardSlug(boardSlug);
+        throw new Error("เพิ่มข้อมูลสำเร็จ แต่ระบบดึงแถวกลับมาไม่ได้ (RLS) — รีเฟรชข้อมูลแล้ว");
+      }
       const row = toRowData(data as DbTaskRow);
       this.byBoard[boardSlug] = [row, ...(this.byBoard[boardSlug] ?? [])];
       return row;
@@ -183,14 +188,20 @@ export const useTasksStore = defineStore("tasks", {
         .update(patch)
         .eq("id", id)
         .select("*")
-        .single();
+        .maybeSingle();
 
       if (error) throw new Error(error.message);
+
+      if (!data) {
+        await this.fetchByBoardSlug(boardSlug);
+        return null;
+      }
 
       const updated = toRowData(data as DbTaskRow);
 
       const list = this.byBoard[boardSlug] ?? [];
       const idx = list.findIndex((x) => x.id === id);
+
       if (idx !== -1) list[idx] = updated;
       else list.unshift(updated);
 

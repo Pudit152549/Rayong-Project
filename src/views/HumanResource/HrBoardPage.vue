@@ -124,7 +124,7 @@
 </template>
 
 <script setup lang="ts">
-import { h, reactive, ref, onMounted, onBeforeUnmount, computed } from "vue";
+import { h, reactive, ref, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
 // import { useUserStore } from "../stores/user";
 import { useHrDataStore } from "@/stores/HumanResource/data";
@@ -203,25 +203,17 @@ const clearFilters = () => {
 const checkedRowKeys = ref<number[]>([]);
 const rowKey = (row: RowData) => row.id;
 
-const pageSize = ref(8);
-function recomputePageSize() {
-  const headerHeight = 300;
-  const rowHeight = 44;
-  const usable = window.innerHeight - headerHeight;
-  pageSize.value = Math.max(3, Math.floor(usable / rowHeight));
-}
-onMounted(() => {
-  recomputePageSize();
-  window.addEventListener("resize", recomputePageSize);
-});
-onBeforeUnmount(() => window.removeEventListener("resize", recomputePageSize));
-
 const pagination = reactive({
   page: 1,
-  get pageSize() {
-    return pageSize.value;
+  pageSize: 5,
+  showSizePicker: false,
+  onChange: (page: number) => {
+    pagination.page = page
   },
-  showSizePicker: false
+  onUpdatePageSize: (pageSize: number) => {
+    pagination.pageSize = pageSize
+    pagination.page = 1
+  }
 });
 
 const renderIndex = (_: RowData, index: number) =>
