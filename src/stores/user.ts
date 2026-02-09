@@ -22,6 +22,8 @@ export type ProfileUpdate = {
   department: string;
 };
 
+export type AppRole = "owner" | "admin" | "user";
+
 export interface UserProfile {
   id: string;
   email: string;
@@ -32,6 +34,7 @@ export interface UserProfile {
   position: string;
   department: string;
   fullName: string;
+  appRole: AppRole;
 }
 
 /** ✅ ดึงรูป/ชื่อจาก Google metadata (Supabase จะเก็บไว้ใน user_metadata) */
@@ -66,6 +69,7 @@ function getAuthMeta(user: User | null) {
 export const useUserStore = defineStore("user", {
   state: () => ({
     isLoggedIn: false,
+    ready: false,
     profile: {
       id: "",
       email: "",
@@ -75,13 +79,14 @@ export const useUserStore = defineStore("user", {
       lastname: "",
       position: "",
       department: "",
-      fullName: ""
+      fullName: "",
+      appRole: "user"
     } as UserProfile
   }),
 
   actions: {
-    /** เรียกใน main.ts / App.vue ตอนเริ่มแอป */
     async initAuth() {
+      this.ready = false;
       const { data } = await supabase.auth.getSession();
       const session = data.session;
 
@@ -95,17 +100,16 @@ export const useUserStore = defineStore("user", {
           firstname: "",
           lastname: "",
           position: "",
-          department: ""
+          department: "",
+          app_role: "user"
         });
+        this.ready = true;
         return;
       }
 
       this.isLoggedIn = true;
-
-      // ✅ สำคัญ: ส่ง user เข้าไปด้วย เพื่อเอารูป/ชื่อจาก metadata
       await this.fetchProfile(session.user.id, session.user.email ?? "", session.user);
 
-      // (แนะนำ) ฟัง auth state change เพื่อ refresh profile หลัง OAuth callback
       supabase.auth.onAuthStateChange(async (_event, newSession) => {
         if (!newSession?.user) return;
 
@@ -116,6 +120,7 @@ export const useUserStore = defineStore("user", {
           newSession.user
         );
       });
+      this.ready = true;
     },
 
     async register(payload: RegisterPayload) {
@@ -246,7 +251,8 @@ export const useUserStore = defineStore("user", {
         lastname: row.lastname ?? "",
         position: row.position ?? "",
         department: row.department ?? "",
-        fullName: `${row.firstname ?? ""} ${row.lastname ?? ""}`.trim()
+        fullName: `${row.firstname ?? ""} ${row.lastname ?? ""}`.trim(),
+        appRole: (row.app_role ?? "user") as AppRole
       };
     },
 

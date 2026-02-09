@@ -35,7 +35,7 @@
               </n-button>
             </span>
           </template>
-          Admin
+          // ดึงค่าจาก app_role มาแสดง
         </n-tooltip>
         <n-button text>
           <template #icon>

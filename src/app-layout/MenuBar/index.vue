@@ -23,21 +23,25 @@ import { useRoute, useRouter } from "vue-router";
 import { NMenu } from "naive-ui";
 import type { MenuMixedOption } from "naive-ui/es/menu/src/interface";
 import { getMenuItems } from "./items";
+import { useUserStore } from "@/stores/user";
 
 const props = defineProps<{ collapsed: boolean }>();
 const emit = defineEmits<{ (e: "navigate"): void }>();
 
 const route = useRoute();
 const router = useRouter();
+const userStore = useUserStore();
 
 const selectedKey = ref<string>((route.name as string) || "");
 
 const collapsedWidth = 64;
 const expandedWidth = 220;
 
-const menuOptions = computed<MenuMixedOption[]>(() => getMenuItems());
+// ✅ ส่ง role เข้าไป
+const menuOptions = computed<MenuMixedOption[]>(() =>
+  getMenuItems(userStore.profile.appRole)
+);
 
-// ✅ highlight ตาม route
 watch(
   () => route.name,
   (name) => {
@@ -47,16 +51,11 @@ watch(
 );
 
 const handleSelect = (key: string) => {
-  selectedKey.value = key;
-
-  // ✅ ถ้า key เป็น route name จริง ค่อย push
   const resolved = router.resolve({ name: key });
   if (resolved.matched.length > 0) {
     router.push({ name: key });
     emit("navigate");
-    return;
   }
-
 };
 </script>
 
