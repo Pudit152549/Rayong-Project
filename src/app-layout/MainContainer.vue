@@ -90,8 +90,8 @@ const userStore = useUserStore();
 const toggleSidebar = () => (collapsed.value = !collapsed.value);
 const goProfile = () => router.push({ name: "Profile" });
 
-const logout = () => {
-  userStore.logout();
-  router.push({ name: "Login" });
+const logout = async () => {
+  await userStore.logout();
+  await router.replace({ name: "Login" });
 };
 </script>

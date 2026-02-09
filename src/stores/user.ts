@@ -66,6 +66,8 @@ function getAuthMeta(user: User | null) {
   return { avatarUrl, firstname, lastname, fullName };
 }
 
+let authUnsub: null | (() => void) = null;
+
 export const useUserStore = defineStore("user", {
   state: () => ({
     isLoggedIn: false,
@@ -87,6 +89,7 @@ export const useUserStore = defineStore("user", {
   actions: {
     async initAuth() {
       this.ready = false;
+
       const { data } = await supabase.auth.getSession();
       const session = data.session;
 
@@ -103,25 +106,43 @@ export const useUserStore = defineStore("user", {
           department: "",
           app_role: "user"
         });
-        this.ready = true;
-        return;
+      } else {
+        this.isLoggedIn = true;
+        await this.fetchProfile(session.user.id, session.user.email ?? "", session.user);
+      }
+      
+      if (!authUnsub) {
+        const { data: sub } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+          if (!newSession?.user) {
+            this.isLoggedIn = false;
+            this.applyProfile({
+              id: "",
+              email: "",
+              username: "",
+              avatar_url: "",
+              firstname: "",
+              lastname: "",
+              position: "",
+              department: "",
+              app_role: "user"
+            });
+            return;
+          }
+
+          this.isLoggedIn = true;
+          await this.fetchProfile(
+            newSession.user.id,
+            newSession.user.email ?? "",
+            newSession.user
+          );
+        });
+
+        authUnsub = () => sub.subscription.unsubscribe();
       }
 
-      this.isLoggedIn = true;
-      await this.fetchProfile(session.user.id, session.user.email ?? "", session.user);
-
-      supabase.auth.onAuthStateChange(async (_event, newSession) => {
-        if (!newSession?.user) return;
-
-        this.isLoggedIn = true;
-        await this.fetchProfile(
-          newSession.user.id,
-          newSession.user.email ?? "",
-          newSession.user
-        );
-      });
       this.ready = true;
     },
+
 
     async register(payload: RegisterPayload) {
       const email = payload.email.trim().toLowerCase();
@@ -284,7 +305,6 @@ export const useUserStore = defineStore("user", {
     },
 
     async logout() {
-      await supabase.auth.signOut();
       this.isLoggedIn = false;
       this.applyProfile({
         id: "",
@@ -294,8 +314,14 @@ export const useUserStore = defineStore("user", {
         firstname: "",
         lastname: "",
         position: "",
-        department: ""
-      });
+        department: "",
+        app_role: "user"
+      }); 
+      try {
+        await supabase.auth.signOut();
+      } catch (error) {
+        console.error("Logout error:", error);
+      }
     }
   }
 });
