@@ -208,7 +208,7 @@ export const useUserStore = defineStore("user", {
         .select("*")
         .eq("id", userId)
         .single();
-
+        console.log("profiles select:", { data, error });
       // 1) ถ้าไม่มี row → สร้างจาก metadata (รวมรูป)
       if (error || !data) {
         const email = (user?.email ?? fallbackEmail).toLowerCase();
