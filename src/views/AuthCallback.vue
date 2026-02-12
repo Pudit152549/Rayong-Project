@@ -14,16 +14,31 @@ const router = useRouter();
 const userStore = useUserStore();
 
 onMounted(async () => {
-  // สำคัญ: ให้ supabase ประมวลผล token ใน URL
-  const { data } = await supabase.auth.getSession();
-  const session = data.session;
+  try {
+    const url = window.location.href;
+    const code = new URL(url).searchParams.get("code");
 
-  if (session?.user) {
-    userStore.isLoggedIn = true;
-    await userStore.fetchProfile(session.user.id, session.user.email ?? "");
-    router.replace({ name: "Dashboard" }); // หรือ Profile
-  } else {
-    router.replace({ name: "Login" });
+    // ✅ สำคัญ: ถ้ามี code ให้แลกเป็น session ก่อน
+    if (code) {
+      const { error } = await supabase.auth.exchangeCodeForSession(url);
+      if (error) {
+        console.error("exchangeCodeForSession error:", error);
+        return router.replace({ name: "Login" });
+      }
+    }
+
+    // โหลด session + profile ผ่าน store จุดเดียว
+    await userStore.initAuth();
+
+    if (userStore.isLoggedIn) {
+      return router.replace({ name: "Dashboard" });
+    }
+
+    return router.replace({ name: "Login" });
+  } catch (e) {
+    console.error("AuthCallback fatal:", e);
+    return router.replace({ name: "Login" });
   }
 });
 </script>
+

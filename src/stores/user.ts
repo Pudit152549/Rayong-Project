@@ -214,7 +214,7 @@ export const useUserStore = defineStore("user", {
         const email = (user?.email ?? fallbackEmail).toLowerCase();
         const username = (fullName || email.split("@")[0]).toString() || email.split("@")[0];
 
-        await supabase.from("profiles").upsert({
+        const { error: upErr } = await supabase.from("profiles").upsert({
           id: userId,
           email,
           username,
@@ -225,12 +225,12 @@ export const useUserStore = defineStore("user", {
           avatar_url: avatarUrl ?? ""
         });
 
-        const again = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", userId)
-          .single();
+        if (upErr) {
+          console.error("profiles upsert error:", upErr);
+          return;
+        }
 
+        const again = await supabase.from("profiles").select("*").eq("id", userId).single();
         if (again.data) this.applyProfile(again.data);
         return;
       }
