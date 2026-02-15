@@ -15,57 +15,98 @@
           <!-- ✅ 2 cols (2 inputs/row) = 4 rows -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
             <n-form-item path="firstname" label="Firstname:">
-              <n-input v-model:value="form.firstname" placeholder="Firstname" class="w-full mt-1" />
+              <n-input 
+              ref="r0" 
+              v-model:value="form.firstname" 
+              placeholder="Firstname" 
+              class="w-full mt-1" 
+              @keydown.enter.prevent="focusNext(1)"
+              />
             </n-form-item>
 
             <n-form-item path="lastname" label="Lastname:">
-              <n-input v-model:value="form.lastname" placeholder="Lastname" class="w-full mt-1" />
+              <n-input 
+              ref="r1" 
+              v-model:value="form.lastname" 
+              placeholder="Lastname" 
+              class="w-full mt-1" 
+              @keydown.enter.prevent="focusNext(2)" 
+              />
             </n-form-item>
 
             <n-form-item path="username" label="Username:">
-              <n-input v-model:value="form.username" placeholder="Username" class="w-full mt-1" />
+              <n-input 
+              ref="r2" 
+              v-model:value="form.username" 
+              placeholder="Username" 
+              class="w-full mt-1" 
+              @keydown.enter.prevent="focusNext(3)" 
+              />
             </n-form-item>
 
             <n-form-item path="position" label="ตำแหน่ง:">
-              <n-input v-model:value="form.position" placeholder="ตำแหน่ง" class="w-full mt-1" />
+              <n-input 
+              ref="r3" 
+              v-model:value="form.position" 
+              placeholder="ตำแหน่ง" 
+              class="w-full mt-1" 
+              @keydown.enter.prevent="focusNext(4)" 
+              />
             </n-form-item>
 
             <n-form-item path="department" label="หน่วยงาน:">
-              <n-input v-model:value="form.department" placeholder="หน่วยงาน" class="w-full mt-1" />
+              <n-input 
+              ref="r4" 
+              v-model:value="form.department" 
+              placeholder="หน่วยงาน" 
+              class="w-full mt-1" 
+              @keydown.enter.prevent="focusNext(5)" 
+              />
             </n-form-item>
 
             <n-form-item path="email" label="Email:">
-              <n-input v-model:value="form.email" type="text" placeholder="Email" class="w-full mt-1" />
+              <n-input 
+              ref="r5" 
+              v-model:value="form.email" 
+              type="text" 
+              placeholder="Email" 
+              class="w-full mt-1" 
+              @keydown.enter.prevent="focusNext(6)" 
+              />
             </n-form-item>
 
             <n-form-item path="password" label="Password:">
               <n-input
+                ref="r6"
                 v-model:value="form.password"
                 type="password"
                 show-password-on="click"
                 placeholder="Password"
                 class="w-full mt-1"
+                @keydown.enter.prevent="focusNext(7)"
               />
             </n-form-item>
 
             <n-form-item path="confirmPassword" label="Confirm Password:">
               <n-input
+                ref="r7"
                 v-model:value="form.confirmPassword"
                 type="password"
                 show-password-on="click"
                 placeholder="Confirm Password"
                 class="w-full mt-1"
+                @keydown.enter.prevent="handleRegister"
               />
             </n-form-item>
           </div>
-
+            <n-button block type="primary" attr-type="submit" class="w-full md:w-72">
+              Register
+            </n-button>
           <n-divider class="my-4" />
 
           <!-- ✅ buttons align center -->
           <div class="flex flex-col items-center gap-3">
-            <n-button block type="primary" attr-type="submit" class="w-full md:w-72">
-              Register
-            </n-button>
+
 
             <router-link to="/" class="w-full md:w-72">
               <n-button strong secondary round type="info" class="w-full">
@@ -145,7 +186,20 @@ watch(
 
 const isPasswordMatch = computed(() => form.password === form.confirmPassword);
 const formRef = ref<FormInst | null>(null);
+const r0 = ref<any>(null);
+const r1 = ref<any>(null);
+const r2 = ref<any>(null);
+const r3 = ref<any>(null);
+const r4 = ref<any>(null);
+const r5 = ref<any>(null);
+const r6 = ref<any>(null);
+const r7 = ref<any>(null);
 
+const inputRefs = [r0, r1, r2, r3, r4, r5, r6, r7];
+
+const focusNext = (nextIndex: number) => {
+  inputRefs[nextIndex]?.value?.focus?.();
+};
 const rules: FormRules = {
   firstname: [{ required: true, message: "Please enter firstname", trigger: ["input", "blur"] }],
   lastname: [{ required: true, message: "Please enter lastname", trigger: ["input", "blur"] }],

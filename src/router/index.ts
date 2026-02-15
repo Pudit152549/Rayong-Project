@@ -76,7 +76,8 @@ const router = createRouter({
     // --------------------
     // NOT FOUND
     // --------------------
-    { path: "/:pathMatch(.*)*", redirect: "/login" }
+    { path: "/:pathMatch(.*)*", redirect: { name: "Login" } }
+
   ]
 });
 router.beforeEach(async (to) => {
@@ -116,5 +117,31 @@ router.beforeEach(async (to) => {
 
   return true;
 });
+
+router.onError((err, to) => {
+  const msg = String((err as any)?.message ?? err);
+
+  // เคส lazy import / chunk โหลดไม่ขึ้น (ต้องกด F5 ถึงหาย)
+  if (
+    msg.includes("Failed to fetch dynamically imported module") ||
+    msg.includes("Importing a module script failed") ||
+    msg.includes("ChunkLoadError") ||
+    msg.includes("Loading chunk")
+  ) {
+    // กัน loop: รีโหลดแค่ครั้งเดียวต่อ path
+    const key = `__chunk_reload__:${to.fullPath}`;
+    const hasReloaded = sessionStorage.getItem(key);
+
+    if (!hasReloaded) {
+      sessionStorage.setItem(key, "1");
+      window.location.href = to.fullPath;
+      return;
+    }
+  }
+
+  // ถ้าไม่ใช่เคสข้างบน ก็ log ไว้ก่อน
+  console.error("Router error:", err);
+});
+
 
 export default router;

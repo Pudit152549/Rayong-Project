@@ -17,16 +17,19 @@
               placeholder="E-mail"
               class="w-full mt-1 custom-input"
               type="text"
+              @keydown.enter.prevent="focusPassword"
             />
           </n-form-item>
 
           <n-form-item path="password" label="Password :" class="mb-2">
             <n-input
+              ref="passwordRef"
               v-model:value="form.password"
               placeholder="Password"
               class="w-full mt-1 custom-input"
               type="password"
               show-password-on="click"
+              @keydown.enter.prevent="handleLogin"
             />
           </n-form-item>
 
@@ -64,7 +67,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from "vue";
+import { reactive, ref, nextTick } from "vue";
 import { useRouter } from "vue-router";
 import { useUserStore } from "@/stores/user";
 import { Icon } from "@iconify/vue";
@@ -97,6 +100,13 @@ const rules: FormRules = {
 };
 
 const formRef = ref<FormInst | null>(null);
+const passwordRef = ref<any>(null);
+
+const focusPassword = async () => {
+  await nextTick();
+  passwordRef.value?.focus?.();
+};
+
 
 const handleLogin = async () => {
   try {
