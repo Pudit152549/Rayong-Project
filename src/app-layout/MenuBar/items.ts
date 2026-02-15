@@ -56,7 +56,7 @@ export function getMenuItems(role: AppRole): MenuOption[] {
         ),
       key: "UserManagement",
       icon: renderIcon("material-symbols:group-outline"),
-      roles: ["owner"]
+      roles: ["owner", "admin"]
     }
   ];
 

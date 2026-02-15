@@ -68,7 +68,7 @@ const router = createRouter({
     { path: "add", name: "AddData", component: () => import("@/views/AddDataPage.vue"), meta: { roles: ["owner", "admin"] } },
     { path: "edit/:id", name: "Edit", component: () => import("@/views/EditPage.vue"), props: true, meta: { roles: ["owner", "admin"] } },
     { path: "profile", name: "Profile", component: () => import("@/views/ProfilePage.vue") },
-    { path: "user-management", name: "UserManagement", component: () => import("@/views/UserManagement.vue"), meta: { roles: ["owner"] } },
+    { path: "user-management", name: "UserManagement", component: () => import("@/views/UserManagement.vue"), meta: { roles: ["owner", "admin"] } },
   ],
 },
 
