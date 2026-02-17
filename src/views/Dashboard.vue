@@ -53,21 +53,79 @@
             </div>
           </n-card>
         </div>
+        <n-modal v-model:show="showViewModal" :mask-closable="false">
+          <n-card
+            style="width: 820px; max-width: calc(100vw - 32px);"
+            title="ดูรายละเอียดแผนงาน"
+            :bordered="false"
+            size="huge"
+            role="dialog"
+            aria-modal="true"
+          >
+            <n-form v-if="selectedRow" label-placement="top" size="large">
+              <div class="grid md:grid-cols-2 gap-4">
+                <n-form-item label="ชื่อแผนงานที่รับผิดชอบ">
+                  <n-input :value="selectedRow.project_name?.name" disabled />
+                </n-form-item>
+
+                <n-form-item label="ผู้มอบหมาย">
+                  <n-input :value="selectedRow.assigned_agency" disabled />
+                </n-form-item>
+
+                <n-form-item label="ผู้รับผิดชอบ">
+                  <n-input :value="selectedRow.responsible_person_name" disabled />
+                </n-form-item>
+
+                <n-form-item label="แผนกที่รับผิดชอบ">
+                  <n-input :value="selectedRow.department" disabled />
+                </n-form-item>
+
+                <n-form-item label="สถานะความคืบหน้า">
+                  <n-select :value="selectedRow.status" :options="statusOptions" disabled class="w-full" />
+                </n-form-item>
+
+                <n-form-item label="ระยะเวลาที่ได้รับ" class="md:col-span-2">
+                  <n-date-picker
+                    type="daterange"
+                    :value="selectedRow.period"
+                    disabled
+                    class="w-full"
+                    clearable
+                  />
+                </n-form-item>
+              </div>
+            </n-form>
+
+            <template #footer>
+              <div class="flex justify-end gap-2">
+                <n-button @click="closeViewModal">ปิด</n-button>
+              </div>
+            </template>
+          </n-card>
+        </n-modal>
       </n-card>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, h, onMounted, reactive } from "vue";
+import { computed, h, onMounted, reactive, ref } from "vue";
 import {
   NCard,
   NProgress,
   NDataTable,
   NTag,
+  NButton,
+  NModal,
+  NForm,
+  NFormItem,
+  NInput,
+  NSelect,
+  NDatePicker,
   type DataTableColumns
 } from "naive-ui";
 
+import { EyeOutline } from "@vicons/ionicons5";
 import { useHrDataStore } from "@/stores/HumanResource/data";
 import { useIotDataStore } from "@/stores/IOT/data";
 import { useUserStore } from "@/stores/user";
@@ -155,6 +213,24 @@ const statusTypeMap: Record<Status, "error" | "warning" | "success"> = {
   done: "success"
 };
 
+const showViewModal = ref(false);
+const selectedRow = ref<DashboardRow | null>(null);
+
+const openViewModal = (row: DashboardRow) => {
+  selectedRow.value = row;
+  showViewModal.value = true;
+};
+
+const closeViewModal = () => {
+  showViewModal.value = false;
+  selectedRow.value = null;
+};
+
+const statusOptions = [
+  { label: "To Do", value: "todo" },
+  { label: "In Progress", value: "in_progress" },
+  { label: "Done", value: "done" }
+];
 const columns: DataTableColumns<DashboardRow> = [
   {
     title: "แผนงาน",
@@ -184,6 +260,26 @@ const columns: DataTableColumns<DashboardRow> = [
         NTag,
         { type: statusTypeMap[row.status], round: true },
         { default: () => statusLabelMap[row.status] }
+      )
+  },
+{
+    title: "การจัดการ",
+    key: "action",
+    width: 140,
+    align: "center",
+    render: (row) =>
+      h(
+        NButton,
+        {
+          circle: true,
+          tertiary: true,
+          type: "info",
+          size: "small",
+          onClick: () => openViewModal(row)
+        },
+        {
+          icon: () => h(EyeOutline)
+        }
       )
   }
 ];

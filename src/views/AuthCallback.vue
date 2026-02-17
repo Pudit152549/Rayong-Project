@@ -18,7 +18,9 @@ onMounted(async () => {
     const url = window.location.href;
     const code = new URL(url).searchParams.get("code");
 
-    // ✅ สำคัญ: ถ้ามี code ให้แลกเป็น session ก่อน
+    // ✅ ถ้ามี code = กลับมาจาก Google จริง
+    const cameFromOAuth = !!code;
+
     if (code) {
       const { error } = await supabase.auth.exchangeCodeForSession(url);
       if (error) {
@@ -31,6 +33,11 @@ onMounted(async () => {
     await userStore.initAuth();
 
     if (userStore.isLoggedIn) {
+      // ✅ ยิงแจ้งเตือน login เฉพาะกรณีเพิ่งกลับจาก OAuth
+      if (cameFromOAuth) {
+        await userStore.notifyLogin();
+      }
+
       return router.replace({ name: "Dashboard" });
     }
 

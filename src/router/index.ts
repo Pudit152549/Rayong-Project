@@ -58,7 +58,7 @@ const router = createRouter({
   meta: { requiresAuth: true },
   children: [
     { path: "", redirect: { name: "Dashboard" } },
-
+    { path: "notification", name: "Notification", component: () => import("@/views/Notification.vue") },
     { path: "dashboard", name: "Dashboard", component: () => import("@/views/Dashboard.vue") },
 
     // ✅ ทำ path รวมสำหรับ boards + redirect เข้า HR

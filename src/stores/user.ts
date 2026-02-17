@@ -183,8 +183,23 @@ export const useUserStore = defineStore("user", {
 
       this.isLoggedIn = true;
       await this.fetchProfile(data.user.id, data.user.email ?? e, data.user);
+      await this.notifyLogin();
 
       return { ok: true } as const;
+    },
+    async notifyLogin() {
+      try {
+        const { error } = await supabase.rpc("notify_self", {
+          p_event: "login",
+          p_title: "เข้าสู่ระบบสำเร็จ",
+          p_message: `คุณเข้าสู่ระบบเมื่อ ${new Date().toLocaleString()}`
+        });
+
+        if (error) throw error;
+      } catch (e) {
+        console.error("notifyLogin error:", e);
+        // ไม่ต้อง throw เพราะไม่ควรทำให้ login พัง
+      }
     },
 
     async loginWithGoogle() {
