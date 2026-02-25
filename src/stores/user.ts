@@ -35,6 +35,7 @@ export interface UserProfile {
   department: string;
   fullName: string;
   appRole: AppRole;
+  authProvider: string;
 }
 
 /** ✅ ดึงรูป/ชื่อจาก Google metadata (Supabase จะเก็บไว้ใน user_metadata) */
@@ -82,7 +83,8 @@ export const useUserStore = defineStore("user", {
       position: "",
       department: "",
       fullName: "",
-      appRole: "user"
+      appRole: "user",
+      authProvider: "email"
     } as UserProfile
   }),
 
@@ -104,7 +106,8 @@ export const useUserStore = defineStore("user", {
           lastname: "",
           position: "",
           department: "",
-          app_role: "user"
+          app_role: "user",
+          auth_provider: "email"
         });
       } else {
         this.isLoggedIn = true;
@@ -124,7 +127,8 @@ export const useUserStore = defineStore("user", {
               lastname: "",
               position: "",
               department: "",
-              app_role: "user"
+              app_role: "user",
+              auth_provider: "email"
             });
             return;
           }
@@ -237,7 +241,8 @@ export const useUserStore = defineStore("user", {
           lastname: lastname ?? "",
           position: "",
           department: "",
-          avatar_url: avatarUrl ?? ""
+          avatar_url: avatarUrl ?? "",
+          auth_provider: (user?.app_metadata?.provider ?? "email")
         });
 
         if (upErr) {
@@ -249,17 +254,38 @@ export const useUserStore = defineStore("user", {
         if (again.data) this.applyProfile(again.data);
         return;
       }
+      // ✅ sync auth_provider ถ้าเปลี่ยน (เช่น email -> google)
+      const currentProvider = (data as any).auth_provider ?? "email";
+      const authProvider = (user?.app_metadata?.provider ?? "email");
+
+      // baseRow = แถวที่เราจะใช้ต่อ (ไม่แก้ data)
+      const baseRow =
+        currentProvider !== authProvider
+          ? { ...(data as any), auth_provider: authProvider }
+          : data;
+
+      if (currentProvider !== authProvider) {
+        const { error: upErr } = await supabase
+          .from("profiles")
+          .update({
+            auth_provider: authProvider,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", userId);
+
+        if (upErr) console.error("profiles update auth_provider error:", upErr);
+      }
 
       // 2) ถ้ามี row แล้ว แต่ avatar_url ว่าง และ Google มีรูป → เติมให้
-      const rowAvatar = (data as any).avatar_url ?? "";
+      const rowAvatar = (baseRow as any).avatar_url ?? "";
       if (!rowAvatar && avatarUrl) {
         const patch: any = {
           avatar_url: avatarUrl,
           updated_at: new Date().toISOString()
         };
 
-        if (!(data as any).firstname && firstname) patch.firstname = firstname;
-        if (!(data as any).lastname && lastname) patch.lastname = lastname;
+        if (!(baseRow as any).firstname && firstname) patch.firstname = firstname;
+        if (!(baseRow as any).lastname && lastname) patch.lastname = lastname;
 
         const { data: updatedRow, error: upErr } = await supabase
           .from("profiles")
@@ -274,7 +300,7 @@ export const useUserStore = defineStore("user", {
         return;
       }
 
-      this.applyProfile(data);
+      this.applyProfile(baseRow);
     },
 
     applyProfile(row: any) {
@@ -288,7 +314,8 @@ export const useUserStore = defineStore("user", {
         position: row.position ?? "",
         department: row.department ?? "",
         fullName: `${row.firstname ?? ""} ${row.lastname ?? ""}`.trim(),
-        appRole: (row.app_role ?? "user") as AppRole
+        appRole: (row.app_role ?? "user") as AppRole,
+        authProvider: row.auth_provider ?? "email"
       };
     },
 
@@ -330,7 +357,8 @@ export const useUserStore = defineStore("user", {
         lastname: "",
         position: "",
         department: "",
-        app_role: "user"
+        app_role: "user",
+        auth_provider: "email"
       }); 
       try {
         await supabase.auth.signOut();
