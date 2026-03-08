@@ -8,9 +8,10 @@ const supabase = createClient(
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-export const handler = async () => {
+export const handler = async (event) => {
+  const isScheduled = event?.headers?.["x-nf-scheduled"] === "true" || event?.schedule;
+  // ไม่ต้องใช้ isScheduled ก็ได้ แค่รองรับ signature ก็พอ
   try {
-    // 1) claim งานจาก queue (ใช้ฟังก์ชันที่คุณสร้างไว้ใน Supabase)
     const { data: jobs, error: claimErr } = await supabase.rpc("claim_email_jobs", {
       batch_size: 10,
     });
@@ -18,12 +19,17 @@ export const handler = async () => {
     if (claimErr) {
       return {
         statusCode: 500,
+        headers: { "content-type": "application/json" },
         body: JSON.stringify({ ok: false, step: "claim", error: claimErr.message }),
       };
     }
 
     if (!jobs || jobs.length === 0) {
-      return { statusCode: 200, body: JSON.stringify({ ok: true, processed: 0 }) };
+      return {
+        statusCode: 200,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ok: true, processed: 0, scheduled: !!isScheduled }),
+      };
     }
 
     let sent = 0;
@@ -58,11 +64,13 @@ export const handler = async () => {
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ ok: true, processed: jobs.length, sent, failed }),
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ ok: true, processed: jobs.length, sent, failed, scheduled: !!isScheduled }),
     };
   } catch (e) {
     return {
       statusCode: 500,
+      headers: { "content-type": "application/json" },
       body: JSON.stringify({ ok: false, step: "outer", error: e?.message ?? String(e) }),
     };
   }

@@ -1,3 +1,4 @@
+// src/stores/user.ts
 import { defineStore } from "pinia";
 import { supabase } from "@/lib/supabase";
 import type { User } from "@supabase/supabase-js";
@@ -42,27 +43,13 @@ export interface UserProfile {
 function getAuthMeta(user: User | null) {
   const meta = (user?.user_metadata ?? {}) as Record<string, any>;
 
-  const avatarUrl: string =
-    meta.avatar_url ||
-    meta.picture ||
-    "";
+  const avatarUrl: string = meta.avatar_url || meta.picture || "";
 
-  // Google มักมี name/full_name, given_name, family_name
-  const firstname: string =
-    meta.given_name ||
-    meta.first_name ||
-    "";
+  const firstname: string = meta.given_name || meta.first_name || "";
+  const lastname: string = meta.family_name || meta.last_name || "";
 
-  const lastname: string =
-    meta.family_name ||
-    meta.last_name ||
-    "";
-
-  // บางทีจะมี full_name / name
   const fullName: string =
-    meta.full_name ||
-    meta.name ||
-    `${firstname} ${lastname}`.trim();
+    meta.full_name || meta.name || `${firstname} ${lastname}`.trim();
 
   return { avatarUrl, firstname, lastname, fullName };
 }
@@ -113,9 +100,9 @@ export const useUserStore = defineStore("user", {
         this.isLoggedIn = true;
         await this.fetchProfile(session.user.id, session.user.email ?? "", session.user);
       }
-      
+
       if (!authUnsub) {
-        const { data: sub } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+        const { data: sub } = supabase.auth.onAuthStateChange(async (event, newSession) => {
           if (!newSession?.user) {
             this.isLoggedIn = false;
             this.applyProfile({
@@ -139,6 +126,11 @@ export const useUserStore = defineStore("user", {
             newSession.user.email ?? "",
             newSession.user
           );
+
+          // ✅ ยิงแจ้งเตือน login เฉพาะตอน SIGNED_IN (กันซ้ำ + เฉพาะ google)
+          if (event === "SIGNED_IN") {
+            await this.notifyLoginOncePerSession(newSession.user.id);
+          }
         });
 
         authUnsub = () => sub.subscription.unsubscribe();
@@ -146,7 +138,6 @@ export const useUserStore = defineStore("user", {
 
       this.ready = true;
     },
-
 
     async register(payload: RegisterPayload) {
       const email = payload.email.trim().toLowerCase();
@@ -167,7 +158,8 @@ export const useUserStore = defineStore("user", {
         lastname: payload.lastname,
         position: payload.position,
         department: payload.department,
-        avatar_url: payload.avatarUrl ?? ""
+        avatar_url: payload.avatarUrl ?? "",
+        auth_provider: "email"
       });
 
       if (pErr) return { ok: false, message: pErr.message } as const;
@@ -187,23 +179,11 @@ export const useUserStore = defineStore("user", {
 
       this.isLoggedIn = true;
       await this.fetchProfile(data.user.id, data.user.email ?? e, data.user);
-      await this.notifyLogin();
 
+      // ✅ ถ้าอยากให้ email/password ก็มี noti login ด้วย → เอา if นี้ออกได้
+      // ตอนนี้คุณต้องการ “เฉพาะ google” ดังนั้นไม่เรียก notifyLogin ที่นี่
+      // (ปล่อยให้ SIGNED_IN event handle)
       return { ok: true } as const;
-    },
-    async notifyLogin() {
-      try {
-        const { error } = await supabase.rpc("notify_self", {
-          p_event: "login",
-          p_title: "เข้าสู่ระบบสำเร็จ",
-          p_message: `คุณเข้าสู่ระบบเมื่อ ${new Date().toLocaleString()}`
-        });
-
-        if (error) throw error;
-      } catch (e) {
-        console.error("notifyLogin error:", e);
-        // ไม่ต้อง throw เพราะไม่ควรทำให้ login พัง
-      }
     },
 
     async loginWithGoogle() {
@@ -218,6 +198,43 @@ export const useUserStore = defineStore("user", {
       return { ok: true } as const;
     },
 
+    /** ✅ ยิง login notification เฉพาะ google และไม่ให้ทำ login flow พัง */
+    async notifyLogin() {
+      try {
+        if ((this.profile.authProvider ?? "email") !== "google") return;
+
+        const { error } = await supabase.rpc("notify_self", {
+          p_event: "login",
+          p_title: "เข้าสู่ระบบสำเร็จ",
+          p_message: `คุณเข้าสู่ระบบเมื่อ ${new Date().toLocaleString()}`
+        });
+
+        if (error) throw error;
+      } catch (e) {
+        console.error("notifyLogin error:", e);
+      }
+    },
+
+    /**
+     * ✅ กันยิงซ้ำ: ทำให้ 1 session ยิง login noti แค่ครั้งเดียว
+     * (SIGNED_IN บางทีอาจถูก trigger มากกว่า 1 ครั้งในบางเคส)
+     */
+    async notifyLoginOncePerSession(userId: string) {
+      try {
+        const { data } = await supabase.auth.getSession();
+        const token = data.session?.access_token;
+        if (!token) return;
+
+        const key = `login-noti-sent:${userId}:${token.slice(0, 16)}`;
+        if (localStorage.getItem(key)) return;
+
+        await this.notifyLogin();
+        localStorage.setItem(key, "1");
+      } catch (e) {
+        console.error("notifyLoginOncePerSession error:", e);
+      }
+    },
+
     /** ✅ fetch profile + เติมข้อมูลจาก auth metadata (สำคัญกับ Google) */
     async fetchProfile(userId: string, fallbackEmail: string, user?: User) {
       const { avatarUrl, firstname, lastname, fullName } = getAuthMeta(user ?? null);
@@ -227,7 +244,7 @@ export const useUserStore = defineStore("user", {
         .select("*")
         .eq("id", userId)
         .single();
-        console.log("profiles select:", { data, error });
+
       // 1) ถ้าไม่มี row → สร้างจาก metadata (รวมรูป)
       if (error || !data) {
         const email = (user?.email ?? fallbackEmail).toLowerCase();
@@ -242,7 +259,8 @@ export const useUserStore = defineStore("user", {
           position: "",
           department: "",
           avatar_url: avatarUrl ?? "",
-          auth_provider: (user?.app_metadata?.provider ?? "email")
+          auth_provider: user?.app_metadata?.provider ?? "email",
+          updated_at: new Date().toISOString()
         });
 
         if (upErr) {
@@ -254,11 +272,11 @@ export const useUserStore = defineStore("user", {
         if (again.data) this.applyProfile(again.data);
         return;
       }
+
       // ✅ sync auth_provider ถ้าเปลี่ยน (เช่น email -> google)
       const currentProvider = (data as any).auth_provider ?? "email";
-      const authProvider = (user?.app_metadata?.provider ?? "email");
+      const authProvider = user?.app_metadata?.provider ?? "email";
 
-      // baseRow = แถวที่เราจะใช้ต่อ (ไม่แก้ data)
       const baseRow =
         currentProvider !== authProvider
           ? { ...(data as any), auth_provider: authProvider }
@@ -359,7 +377,8 @@ export const useUserStore = defineStore("user", {
         department: "",
         app_role: "user",
         auth_provider: "email"
-      }); 
+      });
+
       try {
         await supabase.auth.signOut();
       } catch (error) {

@@ -5,4 +5,4 @@
   node_bundler = "esbuild"
 
 [functions."email-worker"]
-  schedule = "*/1 * * * *"
+  schedule = "*/5 * * * *"
